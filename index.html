@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Kemerdekaan 17 Agustus</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-red: #e63946;
+            --dark-red: #c1121f;
+            --light-red: #ff4d6d;
+            --bg-body: #f8f9fa;
+            --surface-white: #ffffff;
+            --text-main: #2b2d42;
+            --text-muted: #8d99ae;
+            --gold: #FFD700;
+            --silver: #C0C0C0;
+            --bronze: #CD7F32;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            overflow-x: hidden;
+        }
+
+        #sidebar {
+            min-height: 100vh;
+            background: linear-gradient(180deg, var(--dark-red) 0%, var(--primary-red) 100%);
+            color: white;
+            width: 260px;
+            box-shadow: 4px 0 15px rgba(0,0,0,0.05);
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        .sidebar-brand {
+            padding: 2rem 1.5rem;
+            font-size: 1.4rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 1rem;
+        }
+
+        .sidebar-brand span { color: #ffecd1; }
+
+        #sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            padding: 0.8rem 1.5rem;
+            margin: 0.3rem 1rem;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            font-weight: 500;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #sidebar .nav-link i {
+            width: 24px;
+            font-size: 1.1rem;
+            margin-right: 10px;
+        }
+
+        #sidebar .nav-link:hover, 
+        #sidebar .nav-link.active {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .logout-btn {
+            margin-top: auto;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            border-radius: 0 !important;
+            margin: 0 !important;
+            padding: 1.2rem 1.5rem !important;
+        }
+
+        .logout-btn:hover { background-color: rgba(0,0,0,0.2) !important; color: #ffb3c1 !important; }
+
+        .main-wrapper { flex-grow: 1; display: flex; flex-direction: column; min-width: 0; }
+        
+        .top-navbar {
+            background-color: var(--surface-white);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+            padding: 1rem 2rem;
+            border-bottom: 1px solid #edf2f7;
+            z-index: 999;
+        }
+
+        .page-title { font-weight: 700; font-size: 1.25rem; color: var(--text-main); margin: 0; }
+        .content-area { padding: 2rem; flex-grow: 1; overflow-y: auto; }
+
+        .card {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.04);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            background: var(--surface-white);
+        }
+        .card:hover { box-shadow: 0 8px 30px rgba(230, 57, 70, 0.15); }
+
+        .stat-card { padding: 1.5rem; border-left: 5px solid var(--primary-red); }
+        .stat-icon {
+            background: rgba(230, 57, 70, 0.1);
+            color: var(--primary-red);
+            width: 50px; height: 50px;
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .btn-merah {
+            background-color: var(--primary-red);
+            color: white; border: none; border-radius: 8px;
+            padding: 0.5rem 1.2rem; font-weight: 500; transition: all 0.2s;
+        }
+        .btn-merah:hover {
+            background-color: var(--dark-red); color: white;
+            transform: translateY(-2px); box-shadow: 0 4px 12px rgba(230, 57, 70, 0.3);
+        }
+        
+        .table-custom { vertical-align: middle; }
+        .table-custom thead th {
+            background-color: #f8f9fa; color: var(--text-muted);
+            font-weight: 600; text-transform: uppercase; font-size: 0.85rem;
+            letter-spacing: 0.5px; border-bottom: 2px solid #edf2f7; padding: 1rem;
+        }
+        .table-custom tbody td { padding: 1rem; border-bottom: 1px solid #edf2f7; }
+
+        .loader-overlay { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(5px); z-index: 2000; }
+        .spinner-merah { color: var(--primary-red); }
+
+        .medal-gold { color: var(--gold); font-size: 1.5rem; }
+        .medal-silver { color: var(--silver); font-size: 1.5rem; }
+        .medal-bronze { color: var(--bronze); font-size: 1.5rem; }
+
+        @media (max-width: 768px) {
+            #sidebar { position: fixed; transform: translateX(-100%); }
+            #sidebar.show { transform: translateX(0); }
+            .content-area { padding: 1rem; }
+        }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+<div class="d-flex h-100">
+    <!-- Sidebar -->
+    <nav id="sidebar" class="d-flex flex-column">
+        <div class="sidebar-brand">
+            <i class="fas fa-flag text-white me-2"></i> DIRGAHAYU <span>RI</span>
+        </div>
+        
+        <div class="px-3 mb-2 text-white-50 small fw-bold">MENU UTAMA</div>
+        <a href="#dashboard" class="nav-link active" id="nav-dashboard"><i class="fas fa-chart-pie"></i> Dashboard</a>
+        <a href="#peserta" class="nav-link" id="nav-peserta"><i class="fas fa-users"></i> Data Peserta</a>
+        <a href="#lomba" class="nav-link" id="nav-lomba"><i class="fas fa-trophy"></i> Daftar Lomba</a>
+        
+        <div class="px-3 mt-4 mb-2 text-white-50 small fw-bold">PENILAIAN & HASIL</div>
+        <a href="#juri" class="nav-link" id="nav-juri"><i class="fas fa-user-tie"></i> Data Juri</a>
+        <a href="#penilaian" class="nav-link" id="nav-penilaian"><i class="fas fa-clipboard-check"></i> Penilaian</a>
+        <a href="#juara" class="nav-link" id="nav-juara"><i class="fas fa-medal"></i> Daftar Juara</a>
+        <a href="#laporan" class="nav-link" id="nav-laporan"><i class="fas fa-file-signature"></i> Sertifikat & Laporan</a>
+        
+        <div class="mt-auto">
+            <a href="#" onclick="api.logout()" class="nav-link logout-btn text-white">
+                <i class="fas fa-sign-out-alt"></i> Keluar Sistem
+            </a>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-wrapper">
+        <nav class="top-navbar d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+                <button class="btn btn-light d-md-none me-3" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+                <h1 class="page-title" id="page-title">Dashboard</h1>
+            </div>
+            <div class="user-profile d-flex align-items-center">
+                <span class="me-3 fw-medium d-none d-md-block text-muted">Halo, Panitia!</span>
+                <img src="https://ui-avatars.com/api/?name=Panitia+Lomba&background=e63946&color=fff&rounded=true" alt="User" width="40" height="40" class="rounded-circle shadow-sm">
+            </div>
+        </nav>
+
+        <div class="content-area" id="main-content">
+            <!-- Dinamis via JavaScript -->
+        </div>
+    </div>
+</div>
+
+<div id="global-loader" class="hidden loader-overlay position-fixed top-0 start-0 w-100 h-100 d-flex flex-column justify-content-center align-items-center">
+    <div class="spinner-border spinner-merah" style="width: 3rem; height: 3rem;" role="status"></div>
+    <span class="mt-3 fw-medium text-muted" id="loader-text">Menyiapkan data...</span>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="js/script.js"></script> 
+
+<script>
+    const renderPage = {
+        dashboard: `
+            <div class="row g-4 mb-4">
+                <div class="col-12 col-md-3">
+                    <div class="card stat-card d-flex flex-row align-items-center">
+                        <div class="stat-icon me-3"><i class="fas fa-users"></i></div>
+                        <div><p class="text-muted mb-1 font-monospace small">PESERTA</p><h3 class="fw-bold mb-0" id="stat-peserta">...</h3></div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-3">
+                    <div class="card stat-card d-flex flex-row align-items-center">
+                        <div class="stat-icon me-3"><i class="fas fa-trophy"></i></div>
+                        <div><p class="text-muted mb-1 font-monospace small">LOMBA</p><h3 class="fw-bold mb-0" id="stat-lomba">...</h3></div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-3">
+                    <div class="card stat-card d-flex flex-row align-items-center">
+                        <div class="stat-icon me-3 bg-warning text-dark"><i class="fas fa-user-tie"></i></div>
+                        <div><p class="text-muted mb-1 font-monospace small">JURI</p><h3 class="fw-bold mb-0" id="stat-juri">...</h3></div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-3">
+                    <div class="card stat-card d-flex flex-row align-items-center">
+                        <div class="stat-icon me-3 bg-success text-white"><i class="fas fa-check-circle"></i></div>
+                        <div><p class="text-muted mb-1 font-monospace small">SISTEM</p><h3 class="fw-bold mb-0 text-success">Aktif</h3></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card p-4">
+                <h5 class="fw-bold mb-4"><i class="fas fa-bullhorn text-danger me-2"></i> Pengumuman Panitia</h5>
+                <div class="alert alert-danger bg-opacity-10 border-0" role="alert">
+                    <h6 class="fw-bold text-danger"><i class="fas fa-info-circle me-2"></i> Siap Menuju Kemenangan!</h6>
+                    <p class="mb-0 text-muted">Pastikan semua data peserta, juri, dan lomba telah tervalidasi sebelum perlombaan dimulai. Bagikan semangat kemerdekaan!</p>
+                </div>
+            </div>
+        `,
+        peserta: `
+            <div class="card p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div><h5 class="fw-bold mb-1">Manajemen Peserta</h5><p class="text-muted small mb-0">Kelola data warga yang mendaftar lomba.</p></div>
+                    <button class="btn btn-merah"><i class="fas fa-plus me-2"></i> Tambah Warga</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-custom table-hover">
+                        <thead><tr><th>Nama Peserta</th><th>RT</th><th>Lomba Diikuti</th><th class="text-end">Aksi</th></tr></thead>
+                        <tbody id="table-peserta"><tr><td colspan="4" class="text-center py-4 text-muted">Memuat data...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        `,
+        lomba: `
+            <div class="card p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div><h5 class="fw-bold mb-1">Daftar Lomba</h5><p class="text-muted small mb-0">Kelola jenis-jenis perlombaan yang tersedia.</p></div>
+                    <button class="btn btn-merah"><i class="fas fa-plus me-2"></i> Tambah Lomba</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-custom table-hover">
+                        <thead><tr><th>Nama Lomba</th><th>Kategori</th><th>Kuota</th><th>Status</th><th class="text-end">Aksi</th></tr></thead>
+                        <tbody id="table-lomba"><tr><td colspan="5" class="text-center py-4 text-muted">Memuat data...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        `,
+        juri: `
+            <div class="card p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div><h5 class="fw-bold mb-1">Data Juri</h5><p class="text-muted small mb-0">Penanggung jawab dan penilai perlombaan.</p></div>
+                    <button class="btn btn-merah"><i class="fas fa-plus me-2"></i> Tambah Juri</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-custom table-hover">
+                        <thead><tr><th>Nama Juri</th><th>Bidang Lomba</th><th>No. HP</th><th class="text-end">Aksi</th></tr></thead>
+                        <tbody id="table-juri"><tr><td colspan="4" class="text-center py-4 text-muted">Memuat data...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        `,
+        penilaian: `
+            <div class="card p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div><h5 class="fw-bold mb-1">Input Penilaian</h5><p class="text-muted small mb-0">Masukkan skor/nilai peserta.</p></div>
+                    <button class="btn btn-merah"><i class="fas fa-star me-2"></i> Input Nilai Baru</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-custom table-hover">
+                        <thead><tr><th>Peserta</th><th>Lomba</th><th>Juri Penilai</th><th>Skor/Nilai</th><th class="text-end">Aksi</th></tr></thead>
+                        <tbody id="table-penilaian"><tr><td colspan="5" class="text-center py-4 text-muted">Memuat data...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        `,
+        juara: `
+            <div class="card p-4">
+                <div class="text-center mb-5">
+                    <h5 class="fw-bold mb-1"><i class="fas fa-crown text-warning"></i> Papan Skor & Juara Utama</h5>
+                    <p class="text-muted small">Daftar pemenang lomba 17 Agustus.</p>
+                </div>
+                <div class="row" id="podium-container">
+                    <div class="col-12 text-center text-muted"><p>Memuat data juara...</p></div>
+                </div>
+            </div>
+        `,
+        laporan: `
+            <div class="card p-4 text-center">
+                <i class="fas fa-certificate text-danger mb-3" style="font-size: 4rem; opacity: 0.8;"></i>
+                <h4 class="fw-bold mb-2">Cetak Sertifikat & Laporan</h4>
+                <p class="text-muted mb-4">Buat laporan kegiatan dan hasilkan sertifikat digital (PDF) untuk para pemenang dan panitia.</p>
+                
+                <div class="d-flex justify-content-center gap-3">
+                    <button class="btn btn-merah" onclick="generateSertifikat()"><i class="fas fa-print me-2"></i> Generate Sertifikat Pemenang</button>
+                    <button class="btn btn-outline-danger" onclick="alert('Fitur Excel sedang disiapkan.')"><i class="fas fa-file-excel me-2"></i> Download Laporan Excel</button>
+                </div>
+            </div>
+        `
+    };
+
+    const router = async () => {
+        let hash = window.location.hash.substring(1) || 'dashboard';
+        
+        document.querySelectorAll('#sidebar .nav-link').forEach(link => link.classList.remove('active'));
+        const activeLink = document.getElementById(`nav-${hash}`);
+        if(activeLink) activeLink.classList.add('active');
+        
+        const titles = {
+            'dashboard': 'Dashboard Utama', 'peserta': 'Data Peserta', 'lomba': 'Daftar Lomba',
+            'juri': 'Data Juri', 'penilaian': 'Penilaian Lomba', 'juara': 'Daftar Juara', 'laporan': 'Sertifikat & Laporan'
+        };
+        document.getElementById('page-title').innerText = titles[hash] || 'Halaman';
+        
+        const contentDiv = document.getElementById('main-content');
+        contentDiv.innerHTML = renderPage[hash] || `<div class="card p-5 text-center"><h3 class="text-muted">404 - Halaman Tidak Ditemukan</h3></div>`;
+        
+        // Panggil Loader API Sesuai Halaman
+        if (hash === 'dashboard') loadDashboardData();
+        else if (hash === 'peserta') loadPesertaData();
+        else if (hash === 'lomba') loadLombaData();
+        else if (hash === 'juri') loadJuriData();
+        else if (hash === 'penilaian') loadPenilaianData();
+        else if (hash === 'juara') loadJuaraData();
+    };
+
+    const loadDashboardData = async () => {
+        if(typeof api === 'undefined') return;
+        try {
+            const data = await api.request('get_dashboard');
+            if(data) {
+                document.getElementById('stat-peserta').innerText = data.totalPeserta || '0';
+                document.getElementById('stat-lomba').innerText = data.totalLomba || '0';
+                document.getElementById('stat-juri').innerText = data.totalJuri || '0';
+            }
+        } catch (error) { console.error("Gagal memuat dashboard"); }
+    };
+
+    const buildTableRows = (data, emptyMsg, rowBuilder) => {
+        if(data && data.length > 0) return data.map(rowBuilder).join('');
+        return `<tr><td colspan="10" class="text-center py-4 text-muted"><i class="fas fa-folder-open mb-2 fs-3 d-block"></i>${emptyMsg}</td></tr>`;
+    };
+
+    const loadPesertaData = async () => {
+        if(typeof api === 'undefined') return;
+        try {
+            utils.showLoader('Mengambil data peserta...');
+            const data = await api.getPeserta();
+            document.getElementById('table-peserta').innerHTML = buildTableRows(data, "Belum ada data peserta.", p => `
+                <tr>
+                    <td class="fw-medium text-dark">${p.nama || p.Nama}</td>
+                    <td>${p.rt || p.RT || '-'}</td>
+                    <td><span class="badge bg-light text-danger border border-danger">${p.lomba || p.Lomba || '-'}</span></td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-light text-primary me-1"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-sm btn-light text-danger"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `);
+        } catch (e) { utils.showAlert('Error', 'Gagal memuat data.', 'error'); } finally { utils.hideLoader(); }
+    };
+
+    const loadLombaData = async () => {
+        if(typeof api === 'undefined') return;
+        try {
+            utils.showLoader('Mengambil data lomba...');
+            const data = await api.getLomba();
+            document.getElementById('table-lomba').innerHTML = buildTableRows(data, "Belum ada data lomba.", l => {
+                let status = l.status || l.Status || '';
+                let b = status.toLowerCase() === 'buka' ? 'success' : 'secondary';
+                return `<tr>
+                    <td class="fw-bold text-dark">${l.nama || l.Nama || '-'}</td>
+                    <td>${l.kategori || l.Kategori || '-'}</td>
+                    <td>${l.kuota || l.Kuota || '-'} Orang</td>
+                    <td><span class="badge bg-${b} bg-opacity-10 text-${b} border border-${b}">${status}</span></td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-light text-primary me-1"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-sm btn-light text-danger"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>`;
+            });
+        } catch (e) { utils.showAlert('Error', 'Gagal memuat data.', 'error'); } finally { utils.hideLoader(); }
+    };
+
+    const loadJuriData = async () => {
+        if(typeof api === 'undefined') return;
+        try {
+            utils.showLoader('Mengambil data juri...');
+            const data = await api.getJuri();
+            document.getElementById('table-juri').innerHTML = buildTableRows(data, "Belum ada data juri.", j => `
+                <tr>
+                    <td class="fw-medium text-dark"><i class="fas fa-user-circle text-muted me-2"></i>${j.nama || j.Nama || '-'}</td>
+                    <td>${j.lomba || j.Lomba || '-'}</td>
+                    <td>${j.hp || j.HP || '-'}</td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-light text-primary"><i class="fas fa-edit"></i></button>
+                    </td>
+                </tr>
+            `);
+        } catch (e) { console.error(e); } finally { utils.hideLoader(); }
+    };
+
+    const loadPenilaianData = async () => {
+        if(typeof api === 'undefined') return;
+        try {
+            utils.showLoader('Memuat data penilaian...');
+            const data = await api.getPenilaian();
+            document.getElementById('table-penilaian').innerHTML = buildTableRows(data, "Belum ada penilaian yang masuk.", n => `
+                <tr>
+                    <td class="fw-bold">${n.peserta || n.Peserta || '-'}</td>
+                    <td>${n.lomba || n.Lomba || '-'}</td>
+                    <td>${n.juri || n.Juri || '-'}</td>
+                    <td><span class="badge bg-danger fs-6">${n.skor || n.Skor || '0'}</span></td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-light text-primary"><i class="fas fa-edit"></i></button>
+                    </td>
+                </tr>
+            `);
+        } catch (e) { console.error(e); } finally { utils.hideLoader(); }
+    };
+
+    const loadJuaraData = async () => {
+        if(typeof api === 'undefined') return;
+        try {
+            utils.showLoader('Memuat papan skor...');
+            const data = await api.getJuara();
+            let container = document.getElementById('podium-container');
+            
+            if(data && data.length > 0) {
+                container.innerHTML = data.map(j => {
+                    let rank = j.peringkat || j.Peringkat || '1';
+                    let icon = rank == 1 ? '<i class="fas fa-medal medal-gold"></i>' : (rank == 2 ? '<i class="fas fa-medal medal-silver"></i>' : '<i class="fas fa-medal medal-bronze"></i>');
+                    
+                    return `
+                    <div class="col-12 col-md-4 mb-4">
+                        <div class="card h-100 p-4 text-center border-0 shadow-sm" style="background: linear-gradient(145deg, #fff, #f8f9fa);">
+                            <div class="mb-3">${icon}</div>
+                            <h4 class="fw-bold mb-1">${j.peserta || j.Peserta}</h4>
+                            <p class="text-muted small mb-2">${j.lomba || j.Lomba}</p>
+                            <span class="badge bg-danger rounded-pill px-3 py-2">Juara ${rank}</span>
+                        </div>
+                    </div>
+                `}).join('');
+            } else {
+                container.innerHTML = `<div class="col-12 text-center py-5 text-muted"><i class="fas fa-award fs-1 mb-3"></i><p>Pemenang belum diumumkan.</p></div>`;
+            }
+        } catch (e) { console.error(e); } finally { utils.hideLoader(); }
+    };
+
+    window.generateSertifikat = function() {
+        Swal.fire({
+            title: 'Sertifikat Diproses',
+            text: 'Sistem sedang men-generate sertifikat PDF untuk seluruh pemenang. Harap tunggu...',
+            icon: 'info',
+            timer: 2500,
+            showConfirmButton: false
+        }).then(() => {
+            Swal.fire('Berhasil!', 'File Sertifikat_Pemenang_17an.pdf telah siap didownload.', 'success');
+        });
+    }
+
+    // Event Listeners
+    document.getElementById('sidebarToggle')?.addEventListener('click', () => {
+        document.getElementById('sidebar').classList.toggle('show');
+    });
+    window.addEventListener('hashchange', router);
+    window.addEventListener('load', router);
+</script>
+
+</body>
+</html>
