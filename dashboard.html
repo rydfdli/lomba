@@ -11,35 +11,22 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
-    <!-- Tambahan Chart.js untuk visualisasi Grafik Data -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
                         theme: {
-                            purple: '#5E44C2',
-                            purplelight: '#7B61FF',
-                            purplebg: '#EDE9FE',
-                            pink: '#FF1268',
-                            pinklight: '#FF7597',
-                            yellow: '#FFDF00',
-                            bg: '#EFF2F9',
-                            dark: '#1E1B4B',
-                            gray: '#64748B'
+                            purple: '#5E44C2', purplelight: '#7B61FF', purplebg: '#EDE9FE',
+                            pink: '#FF1268', pinklight: '#FF7597',
+                            bg: '#EFF2F9', dark: '#1E1B4B', gray: '#64748B'
                         }
                     },
                     fontFamily: {
                         sans: ['Plus Jakarta Sans', 'sans-serif'],
                         display: ['Fredoka', 'cursive']
                     },
-                    borderRadius: {
-                        '3xl': '1.75rem',
-                        '4xl': '2.25rem',
-                        '5xl': '2.75rem'
-                    },
+                    borderRadius: { '3xl': '1.75rem', '4xl': '2.25rem', '5xl': '2.75rem' },
                     boxShadow: {
                         'soft-clay': '0 12px 32px -8px rgba(94, 68, 194, 0.12), inset 0 2px 4px 0 rgba(255, 255, 255, 1)',
                         'pink-clay': '0 12px 28px -6px rgba(255, 18, 104, 0.35)',
@@ -53,13 +40,21 @@
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #EFF2F9; color: #1E1B4B; -webkit-tap-highlight-color: transparent; }
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-thumb { background: #A5B4FC; border-radius: 9999px; }
-        .chart-container { position: relative; width: 100%; height: 180px; }
+        .loading-overlay { display: none; }
+        .is-loading .loading-overlay { display: flex; }
     </style>
 </head>
-<body class="h-full flex flex-col antialiased">
+<body class="h-full flex flex-col antialiased relative">
 
+    <!-- Loading Overlay -->
+    <div id="loading-screen" class="loading-overlay fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] items-center justify-center flex-col gap-3 hidden">
+        <i class="fa-solid fa-circle-notch fa-spin text-4xl text-theme-purple"></i>
+        <p class="font-display font-bold text-theme-dark text-lg animate-pulse">Menyinkronkan Database...</p>
+    </div>
+
+    <!-- Toast UI -->
     <div id="toast" class="fixed top-5 right-5 z-50 transform translate-x-full transition-transform duration-300 bg-theme-dark text-white px-5 py-4 rounded-3xl shadow-2xl flex items-center gap-3 border-2 border-theme-purple">
-        <i class="fa-solid fa-circle-check text-theme-yellow text-xl"></i>
+        <i class="fa-solid fa-circle-info text-theme-yellow text-xl"></i>
         <div>
             <p id="toast-title" class="font-bold text-xs text-white">Notifikasi</p>
             <p id="toast-msg" class="text-[11px] text-gray-300">Pesan sistem</p>
@@ -67,22 +62,21 @@
     </div>
 
     <!-- Custom Confirm Modal -->
-    <div id="modal-confirm" class="fixed inset-0 bg-theme-dark/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white w-full max-w-sm rounded-4xl p-6 shadow-2xl text-center">
+    <div id="modal-confirm" class="fixed inset-0 bg-theme-dark/60 backdrop-blur-sm z-[80] flex items-center justify-center p-4 hidden">
+        <div class="bg-white w-full max-w-sm rounded-4xl p-6 shadow-2xl text-center border-4 border-white">
             <div class="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
                 <i class="fa-solid fa-triangle-exclamation"></i>
             </div>
-            <h3 class="font-display font-bold text-xl text-theme-dark mb-2">Konfirmasi Tindakan</h3>
-            <p id="confirm-msg" class="text-xs text-gray-500 mb-6">Apakah Anda yakin ingin melanjutkan?</p>
+            <h3 class="font-display font-bold text-xl text-theme-dark mb-2">Konfirmasi</h3>
+            <p id="confirm-msg" class="text-xs text-gray-500 mb-6">Apakah Anda yakin?</p>
             <div class="flex gap-3">
                 <button onclick="closeConfirmModal()" class="flex-1 bg-gray-100 text-gray-600 font-bold py-3 rounded-2xl text-sm transition-colors hover:bg-gray-200">Batal</button>
-                <button onclick="executeConfirm()" class="flex-1 bg-red-500 text-white font-bold py-3 rounded-2xl text-sm shadow-md transition-colors hover:bg-red-600">Ya, Lanjutkan</button>
+                <button onclick="executeConfirm()" class="flex-1 bg-red-500 text-white font-bold py-3 rounded-2xl text-sm shadow-md transition-colors hover:bg-red-600">Ya, Hapus</button>
             </div>
         </div>
     </div>
 
-    <!-- MAIN APP WRAPPER -->
-    <div class="flex-1 flex flex-col md:flex-row h-screen overflow-hidden p-2 sm:p-4 lg:p-6 gap-4 relative">
+    <div class="flex-1 flex flex-col md:flex-row h-screen overflow-hidden p-2 sm:p-4 lg:p-6 gap-4 relative z-10">
 
         <aside class="hidden md:flex flex-col justify-between w-20 lg:w-24 bg-theme-purple rounded-4xl p-4 text-white shadow-purple-clay relative z-20 flex-shrink-0 border border-white/10">
             <div class="flex flex-col items-center gap-6">
@@ -91,26 +85,26 @@
                 </a>
 
                 <nav class="flex flex-col gap-3 w-full items-center pt-2 text-xl">
-                    <button onclick="switchTab('overview')" id="nav-overview" class="w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-200 bg-white text-theme-purple shadow-lg font-bold" title="Ringkasan Utama">
+                    <button onclick="switchTab('overview')" id="nav-overview" class="w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-200 bg-white text-theme-purple shadow-lg font-bold" title="Ringkasan">
                         <i class="fa-solid fa-gauge-high"></i>
                     </button>
-                    <button onclick="switchTab('comments')" id="nav-comments" class="w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-200 text-white/70 hover:bg-white/10 hover:text-white relative" title="Catatan & Komentar Staf">
+                    <button onclick="switchTab('comments')" id="nav-comments" class="w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-200 text-white/70 hover:bg-white/10 hover:text-white relative" title="Komentar Staf">
                         <i class="fa-solid fa-comments"></i>
                         <span id="badge-comment-count" class="absolute -top-1 -right-1 bg-theme-pink text-white text-[9px] font-bold w-4.5 h-4.5 rounded-full flex items-center justify-center hidden">0</span>
                     </button>
-                    <button onclick="switchTab('links')" id="nav-links" class="w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-200 text-white/70 hover:bg-white/10 hover:text-white" title="Kelola Link Cloud Storage">
+                    <button onclick="switchTab('links')" id="nav-links" class="w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-200 text-white/70 hover:bg-white/10 hover:text-white" title="Kelola Link Cloud">
                         <i class="fa-solid fa-folder-open"></i>
                     </button>
-                    <button onclick="switchTab('categories')" id="nav-categories" class="w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-200 text-white/70 hover:bg-white/10 hover:text-white" title="Kelola Kategori Fleksibel">
+                    <button onclick="switchTab('categories')" id="nav-categories" class="w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-200 text-white/70 hover:bg-white/10 hover:text-white" title="Kelola Kategori">
                         <i class="fa-solid fa-layer-group"></i>
                     </button>
-                    <button onclick="switchTab('users')" id="nav-users" class="w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-200 text-white/70 hover:bg-white/10 hover:text-white" title="Kelola Pengguna Sistem">
+                    <button onclick="switchTab('users')" id="nav-users" class="w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-200 text-white/70 hover:bg-white/10 hover:text-white" title="Kelola Pengguna">
                         <i class="fa-solid fa-user-group"></i>
                     </button>
-                    <button onclick="switchTab('logs')" id="nav-logs" class="w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-200 text-white/70 hover:bg-white/10 hover:text-white" title="Log Aktivitas System">
+                    <button onclick="switchTab('logs')" id="nav-logs" class="w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-200 text-white/70 hover:bg-white/10 hover:text-white" title="Log Aktivitas">
                         <i class="fa-solid fa-chart-line"></i>
                     </button>
-                    <button onclick="openApiConfigModal()" id="nav-config" class="w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-200 text-white/70 hover:bg-white/10 hover:text-white" title="Integrasi GAS & Spreadsheet">
+                    <button onclick="openApiConfigModal()" id="nav-config" class="w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-200 text-white/70 hover:bg-white/10 hover:text-white" title="Database Sync">
                         <i class="fa-solid fa-database"></i>
                     </button>
                 </nav>
@@ -123,7 +117,6 @@
             </div>
         </aside>
 
-        <!-- ================= MAIN CENTER CONTENT ================= -->
         <main class="flex-1 flex flex-col overflow-hidden gap-4 rounded-3xl md:rounded-4xl bg-theme-bg/50">
 
             <header class="bg-white/80 backdrop-blur-md p-3 sm:p-4 rounded-3xl md:rounded-4xl border border-white/60 shadow-soft-clay flex items-center justify-between gap-3">
@@ -135,7 +128,7 @@
                         <div class="flex items-center gap-2">
                             <span class="text-[10px] font-bold tracking-wider text-theme-purple uppercase bg-theme-purplebg px-2.5 py-0.5 rounded-full">Puskesmas Hub</span>
                             <span id="api-status-badge" class="text-[10px] font-bold tracking-wider text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full flex items-center gap-1">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Local Active
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Local Fallback
                             </span>
                         </div>
                         <h1 id="page-title" class="font-display font-bold text-lg sm:text-xl text-theme-dark mt-0.5">Primary Dashboard</h1>
@@ -145,7 +138,7 @@
                 <div class="flex items-center gap-2 sm:gap-3">
                     <div class="relative hidden sm:block w-48 md:w-64">
                         <i class="fa-solid fa-magnifying-glass text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
-                        <input type="text" id="global-search" oninput="handleGlobalSearch(this.value)" placeholder="Cari folder, SK, SOP..." 
+                        <input type="text" id="global-search" oninput="handleGlobalSearch(this.value)" placeholder="Cari dokumen/folder..." 
                                class="w-full bg-theme-bg/80 border border-gray-200 text-xs font-medium pl-9 pr-4 py-2.5 rounded-2xl focus:outline-none focus:border-theme-purple focus:bg-white transition-all">
                     </div>
 
@@ -163,89 +156,48 @@
 
             <div class="flex-1 overflow-y-auto pr-0 lg:pr-1 space-y-4 pb-20 md:pb-4">
 
-                <!-- TAB 1: OVERVIEW DASHBOARD -->
                 <div id="tab-overview-content" class="space-y-4">
-                    
                     <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-                        <!-- Purple Chart Card -->
-                        <div class="lg:col-span-7 bg-theme-purple text-white p-5 sm:p-6 rounded-4xl shadow-purple-clay relative overflow-hidden flex flex-col justify-between min-h-[260px]">
+                        <div class="lg:col-span-7 bg-theme-purple text-white p-5 sm:p-6 rounded-4xl shadow-purple-clay relative overflow-hidden flex flex-col justify-between min-h-[200px]">
                             <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
 
                             <div>
-                                <div class="flex items-center justify-between mb-2">
-                                    <h2 class="font-display font-bold text-lg text-white">Aktivitas Akses Cloud</h2>
-                                    <div class="bg-white/15 backdrop-blur-md px-3 py-1 rounded-xl text-xs font-medium text-white/90 border border-white/10">
-                                        Tren Akses (Simulasi)
-                                    </div>
+                                <div class="flex items-center justify-between mb-4">
+                                    <h2 class="font-display font-bold text-lg text-white">Status Penyimpanan Awan</h2>
+                                    <div class="bg-white/15 backdrop-blur-md px-3 py-1 rounded-xl text-xs font-medium text-white/90 border border-white/10">Data Real-time</div>
                                 </div>
-                                <p class="text-xs text-white/70 font-light">Pembukaan tautan folder Google Drive oleh staf publik.</p>
-                            </div>
-
-                            <!-- Area Canvas Chart.js -->
-                            <div class="chart-container my-3">
-                                <canvas id="activityChart"></canvas>
+                                <p class="text-xs text-white/70 font-light mb-6">Ringkasan berkas, link folder yang terhubung, dan kelengkapan integrasi.</p>
                             </div>
 
                             <div class="grid grid-cols-3 gap-2 pt-3 border-t border-white/15 text-center">
                                 <div>
                                     <p class="text-[10px] text-white/60 font-medium uppercase tracking-wider">Total Link</p>
-                                    <p id="stat-total-links" class="font-display text-lg font-bold text-white mt-0.5">0</p>
+                                    <p id="stat-total-links" class="font-display text-2xl font-bold text-white mt-0.5">0</p>
                                 </div>
                                 <div>
                                     <p class="text-[10px] text-white/60 font-medium uppercase tracking-wider">Kategori Aktif</p>
-                                    <p id="stat-total-categories" class="font-display text-lg font-bold text-theme-pink mt-0.5">0</p>
+                                    <p id="stat-total-categories" class="font-display text-2xl font-bold text-theme-pink mt-0.5">0</p>
                                 </div>
                                 <div>
-                                    <p class="text-[10px] text-white/60 font-medium uppercase tracking-wider">Catatan Staf</p>
-                                    <p id="stat-total-comments" class="font-display text-lg font-bold text-emerald-300 mt-0.5">0</p>
+                                    <p class="text-[10px] text-white/60 font-medium uppercase tracking-wider">Catatan Masuk</p>
+                                    <p id="stat-total-comments" class="font-display text-2xl font-bold text-emerald-300 mt-0.5">0</p>
                                 </div>
                             </div>
                         </div>
 
                         <div class="lg:col-span-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
-                            <!-- Small Storage Card -->
-                            <div class="bg-theme-purplelight text-white p-5 rounded-4xl shadow-soft-clay flex items-center justify-between relative overflow-hidden">
-                                <div>
-                                    <span class="text-[10px] font-bold uppercase tracking-wider text-white/70 bg-white/10 px-2.5 py-1 rounded-full">Integrasi Cloud</span>
-                                    <h3 class="font-display font-bold text-lg text-white mt-2">Storage Synchronized</h3>
-                                    <p class="text-xs text-white/80 mt-0.5">Google Workspace Active</p>
-                                </div>
-                                <div class="w-12 h-12 rounded-3xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white shadow-inner-soft flex-shrink-0 text-2xl">
-                                    <i class="fa-solid fa-cloud-arrow-up"></i>
-                                </div>
-                            </div>
-
-                            <!-- Coral Pink Card -->
-                            <div class="bg-gradient-to-br from-theme-pink to-rose-600 text-white p-6 rounded-4xl shadow-pink-clay relative overflow-hidden flex flex-col justify-between min-h-[160px]">
-                                <div class="flex items-center justify-between">
-                                    <div class="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white text-xl">
+                            <div class="bg-gradient-to-br from-theme-pink to-rose-600 text-white p-6 rounded-4xl shadow-pink-clay relative overflow-hidden flex flex-col justify-center">
+                                <div class="flex items-center justify-between mb-2">
+                                    <div class="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center text-white text-xl">
                                         <i class="fa-solid fa-folder-tree"></i>
                                     </div>
-                                    <span class="bg-white/20 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase">Kategori Fleksibel</span>
-                                </div>
-
-                                <div class="my-3">
-                                    <h3 class="font-display text-xl font-bold">Kategori & Folder Dinamis</h3>
-                                    <p class="text-xs text-white/80 mt-1">Kelola struktur kategori dokumen sesuai kebutuhan tiap Poli/TU</p>
-                                </div>
-
-                                <div class="flex items-center justify-between pt-2 border-t border-white/20">
-                                    <span class="text-xs font-semibold">Siap Dikustomisasi</span>
                                     <button onclick="switchTab('categories')" class="w-8 h-8 rounded-full bg-white text-theme-pink flex items-center justify-center shadow-md hover:scale-110 transition-transform">
                                         <i class="fa-solid fa-arrow-right"></i>
                                     </button>
                                 </div>
+                                <h3 class="font-display text-xl font-bold">Kategori Fleksibel</h3>
+                                <p class="text-xs text-white/80 mt-1">Struktur dokumen dinamis Poli & TU.</p>
                             </div>
-                        </div>
-                    </div>
-
-                    <div>
-                        <div class="flex items-center justify-between mb-3">
-                            <h3 class="font-display font-bold text-base text-theme-dark">Ringkasan Kategori Cloud</h3>
-                            <button onclick="switchTab('categories')" class="text-xs font-bold text-theme-purple hover:underline">+ Kelola Kategori</button>
-                        </div>
-                        <div id="overview-category-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                            <!-- Rendered dynamically -->
                         </div>
                     </div>
 
@@ -260,35 +212,32 @@
                     </div>
                 </div>
 
-                <!-- TAB 2: KOMENTAR & MASUKAN STAF -->
                 <div id="tab-comments-content" class="hidden space-y-4">
                     <div class="bg-white p-5 rounded-4xl border border-gray-100 shadow-soft-clay">
                         <div class="flex items-center justify-between mb-4">
                             <div>
                                 <h3 class="font-display font-bold text-lg text-theme-dark">Catatan & Laporan Staf</h3>
-                                <p class="text-xs text-gray-400">Daftar pesan masukan/koreksi berkas yang dikirim staf melalui portal publik</p>
+                                <p class="text-xs text-gray-400">Tanggapan staf dari portal publik</p>
                             </div>
-                            <button onclick="renderAllViews()" class="text-xs font-bold text-theme-purple flex items-center gap-1">
+                            <button onclick="loadInitialData()" class="text-xs font-bold text-theme-purple flex items-center gap-1">
                                 <i class="fa-solid fa-rotate-right"></i> Refresh
                             </button>
                         </div>
-
                         <div id="comments-table-container" class="space-y-3">
                             <!-- Rendered Dynamically -->
                         </div>
                     </div>
                 </div>
 
-                <!-- TAB 3: KELOLA LINK CLOUD -->
                 <div id="tab-links-content" class="hidden space-y-4">
                     <div class="bg-white p-4 rounded-3xl border border-gray-100 shadow-soft-clay flex flex-col md:flex-row gap-3 items-center justify-between">
                         <div id="category-filter-pills" class="flex flex-wrap items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
-                            <!-- Dynamic category filter buttons -->
+                            <!-- Dynamic category filters -->
                         </div>
 
                         <div class="flex items-center gap-2 w-full md:w-auto">
                             <i class="fa-solid fa-magnifying-glass text-gray-400 ml-2"></i>
-                            <input type="text" id="link-search-input" oninput="renderLinksGrid()" placeholder="Cari nama folder/PIC..." 
+                            <input type="text" id="link-search-input" oninput="renderLinksGrid()" placeholder="Cari judul/PIC..." 
                                    class="w-full md:w-56 bg-theme-bg border border-gray-200 text-xs px-3.5 py-2 rounded-2xl focus:outline-none focus:border-theme-purple">
                             <button onclick="openAddLinkModal()" class="bg-theme-pink text-white font-bold px-4 py-2 rounded-2xl text-xs flex-shrink-0 flex items-center gap-1 shadow-pink-clay">
                                 <i class="fa-solid fa-plus"></i> Tambah
@@ -301,16 +250,15 @@
                     </div>
                 </div>
 
-                <!-- TAB 4: KELOLA KATEGORI FLEKSIBEL -->
                 <div id="tab-categories-content" class="hidden space-y-4">
                     <div class="bg-white p-5 rounded-4xl border border-gray-100 shadow-soft-clay">
                         <div class="flex items-center justify-between mb-4">
                             <div>
-                                <h3 class="font-display font-bold text-lg text-theme-dark">Manajemen Kategori Fleksibel</h3>
-                                <p class="text-xs text-gray-400">Tambah, edit, atau hapus kategori folder kerja secara dinamis</p>
+                                <h3 class="font-display font-bold text-lg text-theme-dark">Manajemen Kategori</h3>
+                                <p class="text-xs text-gray-400">Atur kategori dinamis untuk folder</p>
                             </div>
                             <button onclick="openAddCategoryModal()" class="bg-theme-purple text-white px-4 py-2 rounded-2xl text-xs font-bold flex items-center gap-1.5 shadow-md">
-                                <i class="fa-solid fa-circle-plus"></i> Tambah Kategori
+                                <i class="fa-solid fa-circle-plus"></i> Tambah
                             </button>
                         </div>
 
@@ -321,7 +269,6 @@
                                         <th class="pb-3 px-3">Nama Kategori</th>
                                         <th class="pb-3 px-3">Preview Badge</th>
                                         <th class="pb-3 px-3">Ikon CSS</th>
-                                        <th class="pb-3 px-3">Jumlah Link</th>
                                         <th class="pb-3 px-3 text-right">Aksi</th>
                                     </tr>
                                 </thead>
@@ -333,13 +280,12 @@
                     </div>
                 </div>
 
-                <!-- TAB 5: KELOLA PENGGUNA (USERS) -->
                 <div id="tab-users-content" class="hidden space-y-4">
                     <div class="bg-white p-5 rounded-4xl border border-gray-100 shadow-soft-clay">
                         <div class="flex items-center justify-between mb-4">
                             <div>
-                                <h3 class="font-display font-bold text-lg text-theme-dark">Daftar Pengguna Sistem</h3>
-                                <p class="text-xs text-gray-400">Pengelolaan akun pengelola admin dan petugas poli</p>
+                                <h3 class="font-display font-bold text-lg text-theme-dark">Daftar Pengguna</h3>
+                                <p class="text-xs text-gray-400">Manajemen staf dan admin</p>
                             </div>
                             <button onclick="openAddUserModal()" class="bg-theme-purple text-white px-4 py-2 rounded-2xl text-xs font-bold flex items-center gap-1.5 shadow-md">
                                 <i class="fa-solid fa-user-plus"></i> Tambah User
@@ -352,8 +298,7 @@
                                     <tr class="border-b border-gray-100 text-gray-400 uppercase font-semibold">
                                         <th class="pb-3 px-3">Pengguna</th>
                                         <th class="pb-3 px-3">Role</th>
-                                        <th class="pb-3 px-3">Unit / Poli</th>
-                                        <th class="pb-3 px-3">Status</th>
+                                        <th class="pb-3 px-3">Unit</th>
                                         <th class="pb-3 px-3 text-right">Aksi</th>
                                     </tr>
                                 </thead>
@@ -365,19 +310,17 @@
                     </div>
                 </div>
 
-                <!-- TAB 6: LOG AKTIVITAS SYSTEM -->
                 <div id="tab-logs-content" class="hidden space-y-4">
                     <div class="bg-white p-5 rounded-4xl border border-gray-100 shadow-soft-clay">
                         <div class="flex items-center justify-between mb-4">
                             <div>
-                                <h3 class="font-display font-bold text-lg text-theme-dark">Log Aktivitas Sistem</h3>
-                                <p class="text-xs text-gray-400">Audit trail riwayat buka link dan perubahan data</p>
+                                <h3 class="font-display font-bold text-lg text-theme-dark">Log Aktivitas</h3>
+                                <p class="text-xs text-gray-400">Audit trail riwayat akses</p>
                             </div>
-                            <button onclick="renderLogsList()" class="text-xs text-theme-purple font-bold flex items-center gap-1">
+                            <button onclick="loadInitialData()" class="text-xs text-theme-purple font-bold flex items-center gap-1">
                                 <i class="fa-solid fa-rotate-right"></i> Refresh
                             </button>
                         </div>
-
                         <div class="space-y-3" id="logs-timeline-container">
                             <!-- Rendered dynamically -->
                         </div>
@@ -387,16 +330,12 @@
             </div>
         </main>
 
-        <!-- ================= RIGHT SIDEBAR PANEL ================= -->
-        <aside class="hidden xl:flex flex-col w-[300px] bg-white/80 backdrop-blur-xl rounded-[2.5rem] p-5 border-2 border-white shadow-soft-clay space-y-6 flex-shrink-0 z-20">
-            
+        <aside class="hidden xl:flex flex-col w-[300px] bg-white/80 backdrop-blur-xl rounded-4xl p-5 border-2 border-white shadow-soft-clay space-y-6 flex-shrink-0 z-20">
             <div class="flex items-center justify-between pb-4 border-b border-gray-100">
                 <div class="flex items-center gap-3">
-                    <div class="w-11 h-11 rounded-2xl bg-theme-purple text-white flex items-center justify-center font-bold text-xl border-2 border-theme-purple">
-                        A
-                    </div>
+                    <div class="w-11 h-11 rounded-2xl bg-theme-purple text-white flex items-center justify-center font-bold text-xl border-2 border-theme-purple">A</div>
                     <div>
-                        <h4 class="font-bold text-sm text-theme-dark">Admin TU Puskesmas</h4>
+                        <h4 class="font-bold text-sm text-theme-dark">Admin TU</h4>
                         <span class="text-[10px] bg-theme-purplebg text-theme-purple font-bold px-2 py-0.5 rounded-full">ADMINISTRATOR</span>
                     </div>
                 </div>
@@ -404,32 +343,20 @@
 
             <div>
                 <div class="flex items-center justify-between mb-3">
-                    <h4 class="font-display font-bold text-sm text-theme-dark">Staf Aktif Terhubung</h4>
-                    <span class="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded-full">4 Online</span>
+                    <h4 class="font-display font-bold text-sm text-theme-dark">Staf Terhubung</h4>
+                    <span class="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded-full">Online</span>
                 </div>
-
                 <div id="online-users-list" class="space-y-2.5">
                     <!-- Dynamic staff list -->
                 </div>
             </div>
 
-            <!-- Card Lokasi Server Storage -->
             <div class="bg-gradient-to-br from-indigo-50 to-purple-50 p-4 rounded-3xl border border-indigo-100 relative overflow-hidden">
                 <div class="flex items-center justify-between mb-2">
-                    <span class="text-xs font-bold text-theme-purple flex items-center gap-1.5">
-                        <i class="fa-solid fa-location-dot text-theme-pink"></i> Lokasi Server
-                    </span>
+                    <span class="text-xs font-bold text-theme-purple flex items-center gap-1.5"><i class="fa-solid fa-location-dot text-theme-pink"></i> Integrasi Data</span>
                     <span class="text-[10px] bg-white px-2 py-0.5 rounded-full font-semibold text-gray-600">ID</span>
                 </div>
-                <p class="text-xs font-bold text-theme-dark">Puskesmas Sapala</p>
-                <p class="text-[11px] text-gray-500 mt-0.5">Cloud Region asia-southeast2</p>
-            </div>
-
-            <div class="pt-2">
-                <h4 class="font-display font-bold text-sm text-theme-dark mb-3">Aktivitas Terakhir</h4>
-                <div id="mini-activity-list" class="space-y-3 text-xs">
-                    <!-- Dynamic list -->
-                </div>
+                <p class="text-xs font-bold text-theme-dark">SIKDA Apps Script</p>
             </div>
         </aside>
 
@@ -439,20 +366,16 @@
         <button onclick="switchTab('overview')" id="m-nav-overview" class="flex flex-col items-center gap-1 text-theme-purple font-bold px-3">
             <i class="fa-solid fa-gauge-high text-xl"></i>
         </button>
-
         <button onclick="switchTab('comments')" id="m-nav-comments" class="flex flex-col items-center gap-1 text-gray-400 px-3 relative">
             <i class="fa-solid fa-comments text-xl"></i>
             <span class="absolute top-0 right-2 w-2 h-2 bg-theme-pink rounded-full"></span>
         </button>
-
         <button onclick="openAddLinkModal()" class="w-14 h-14 rounded-[1.5rem] bg-gradient-to-br from-theme-pink to-rose-500 text-white flex items-center justify-center shadow-pink-clay -mt-8 border-4 border-white transform active:scale-95 transition-transform text-2xl">
             <i class="fa-solid fa-plus"></i>
         </button>
-
         <button onclick="switchTab('links')" id="m-nav-links" class="flex flex-col items-center gap-1 text-gray-400 px-3">
             <i class="fa-solid fa-folder-open text-xl"></i>
         </button>
-
         <button onclick="switchTab('categories')" id="m-nav-categories" class="flex flex-col items-center gap-1 text-gray-400 px-3">
             <i class="fa-solid fa-layer-group text-xl"></i>
         </button>
@@ -460,7 +383,7 @@
 
     <!-- MODAL: ADD LINK -->
     <div id="modal-link" class="fixed inset-0 bg-theme-dark/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white w-full max-w-lg rounded-[2.5rem] p-6 shadow-2xl relative border-4 border-white">
+        <div class="bg-white w-full max-w-lg rounded-4xl p-6 shadow-2xl relative border-4 border-white">
             <button onclick="closeModal('modal-link')" class="absolute top-5 right-5 w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200"><i class="fa-solid fa-xmark"></i></button>
             <div class="flex items-center gap-3 mb-5">
                 <div class="w-12 h-12 bg-theme-pink text-white rounded-xl flex items-center justify-center shadow-pink-clay text-xl"><i class="fa-solid fa-folder-plus"></i></div>
@@ -480,14 +403,14 @@
                     </select>
                 </div>
                 <input type="text" id="form-pic" required placeholder="Nama PIC / Penanggung Jawab" class="w-full bg-gray-50 focus:bg-white p-3.5 rounded-2xl border border-gray-200 focus:border-theme-purple outline-none transition-colors">
-                <button type="submit" class="w-full bg-theme-purple hover:bg-theme-purplelight text-white py-3.5 rounded-2xl font-bold shadow-purple-clay mt-2 transition-colors">Simpan Tautan</button>
+                <button type="submit" id="btn-save-link" class="w-full bg-theme-purple hover:bg-theme-purplelight text-white py-3.5 rounded-2xl font-bold shadow-purple-clay mt-2 transition-colors">Simpan Tautan</button>
             </form>
         </div>
     </div>
 
     <!-- MODAL: ADD CATEGORY -->
     <div id="modal-category" class="fixed inset-0 bg-theme-dark/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white w-full max-w-md rounded-[2.5rem] p-6 shadow-2xl relative border-4 border-white">
+        <div class="bg-white w-full max-w-md rounded-4xl p-6 shadow-2xl relative border-4 border-white">
             <button onclick="closeModal('modal-category')" class="absolute top-5 right-5 w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200"><i class="fa-solid fa-xmark"></i></button>
             <div class="flex items-center gap-3 mb-5">
                 <div class="w-12 h-12 bg-cyan-500 text-white rounded-xl flex items-center justify-center shadow-md text-xl"><i class="fa-solid fa-layer-group"></i></div>
@@ -500,26 +423,24 @@
                 <input type="text" id="cat-nama" required placeholder="Nama Kategori (Contoh: Pustu, Lab)" class="w-full bg-gray-50 p-3.5 rounded-2xl border border-gray-200 outline-none focus:border-cyan-500">
                 <select id="cat-color" class="w-full bg-gray-50 p-3.5 rounded-2xl border border-gray-200 outline-none">
                     <option value="bg-purple-100 text-theme-purple">Tema Ungu</option>
-                    <option value="bg-pink-100 text-brand-pink">Tema Pink</option>
+                    <option value="bg-pink-100 text-theme-pink">Tema Pink</option>
                     <option value="bg-amber-100 text-amber-800">Tema Kuning/Amber</option>
                     <option value="bg-cyan-100 text-cyan-800">Tema Cyan/Biru</option>
-                    <option value="bg-emerald-100 text-emerald-800">Tema Hijau</option>
                 </select>
                 <select id="cat-icon" class="w-full bg-gray-50 p-3.5 rounded-2xl border border-gray-200 outline-none">
-                    <option value="fa-folder-open">Folder Biasa</option>
-                    <option value="fa-award">Mutu/Akreditasi</option>
-                    <option value="fa-stethoscope">Medis/Poli</option>
-                    <option value="fa-file-invoice-dollar">Keuangan</option>
-                    <option value="fa-chart-line">Program/Aktivitas</option>
+                    <option value="folder-open">Folder Biasa</option>
+                    <option value="award">Mutu/Akreditasi</option>
+                    <option value="stethoscope">Medis/Poli</option>
+                    <option value="file-invoice-dollar">Keuangan</option>
                 </select>
-                <button type="submit" class="w-full bg-cyan-500 hover:bg-cyan-600 text-white py-3.5 rounded-2xl font-bold shadow-md mt-2 transition-colors">Simpan Kategori</button>
+                <button type="submit" id="btn-save-cat" class="w-full bg-cyan-500 hover:bg-cyan-600 text-white py-3.5 rounded-2xl font-bold shadow-md mt-2 transition-colors">Simpan Kategori</button>
             </form>
         </div>
     </div>
 
     <!-- MODAL: ADD USER -->
     <div id="modal-user" class="fixed inset-0 bg-theme-dark/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white w-full max-w-md rounded-[2.5rem] p-6 shadow-2xl relative border-4 border-white">
+        <div class="bg-white w-full max-w-md rounded-4xl p-6 shadow-2xl relative border-4 border-white">
             <button onclick="closeModal('modal-user')" class="absolute top-5 right-5 w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-500"><i class="fa-solid fa-xmark"></i></button>
             <h3 class="font-display font-bold text-lg text-theme-dark mb-4">Pengguna Sistem Baru</h3>
             <form onsubmit="handleSaveUser(event)" class="space-y-3 text-xs font-semibold">
@@ -530,14 +451,14 @@
                     <option value="ADMIN">Admin Tata Usaha</option>
                 </select>
                 <input type="text" id="user-unit" required placeholder="Unit Kerja (Contoh: Farmasi)" class="w-full bg-gray-50 p-3.5 rounded-2xl border">
-                <button type="submit" class="w-full bg-theme-dark text-white py-3.5 rounded-2xl font-bold mt-2">Buat Akun</button>
+                <button type="submit" id="btn-save-user" class="w-full bg-theme-dark text-white py-3.5 rounded-2xl font-bold mt-2">Buat Akun</button>
             </form>
         </div>
     </div>
 
     <!-- MODAL: API CONFIG -->
     <div id="modal-api-config" class="fixed inset-0 bg-theme-dark/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white w-full max-w-md rounded-[2.5rem] p-6 shadow-2xl relative border-4 border-white">
+        <div class="bg-white w-full max-w-md rounded-4xl p-6 shadow-2xl relative border-4 border-white">
             <button onclick="closeModal('modal-api-config')" class="absolute top-5 right-5 w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-500"><i class="fa-solid fa-xmark"></i></button>
             <div class="flex items-center gap-3 mb-5">
                 <div class="w-12 h-12 bg-emerald-500 text-white rounded-xl flex items-center justify-center shadow-md text-xl"><i class="fa-solid fa-database"></i></div>
@@ -550,7 +471,7 @@
                 <input type="text" id="cfg-gas-url" placeholder="URL Web App (exec)" class="w-full bg-gray-50 p-3.5 rounded-2xl border font-mono">
                 <input type="text" id="cfg-sheet-id" placeholder="Google Spreadsheet ID" class="w-full bg-gray-50 p-3.5 rounded-2xl border font-mono">
                 <div class="p-3 bg-yellow-50 text-yellow-800 rounded-xl text-[10px] leading-relaxed border border-yellow-200 mt-2">
-                    💡 Jika dikosongkan, SIKDA akan menggunakan sistem penyimpanan lokal (Local Storage) di peramban Anda untuk keperluan demo.
+                    💡 Jika URL ini diisi, Dashboard otomatis tersambung ke Google Sheets Anda. Jika dikosongkan, Dashboard kembali ke mode Fallback Local Storage.
                 </div>
                 <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-3.5 rounded-2xl font-bold mt-2 transition-colors">Simpan Integrasi</button>
             </form>
@@ -565,40 +486,22 @@
 
         let currentTab = 'overview';
         let confirmAction = null;
-        let chartInstance = null;
 
-        let apiConfig = {
-            gasUrl: localStorage.getItem("sikda_gas_url") || "",
-            spreadsheetId: localStorage.getItem("sikda_sheet_id") || ""
-        };
+        // Fallback Default Data
+        const defaultCategories = [
+            { id: "CAT01", nama: "Akreditasi", badgeColor: "bg-pink-100 text-theme-pink", icon: "award" },
+            { id: "CAT02", nama: "Keuangan", badgeColor: "bg-yellow-100 text-yellow-800", icon: "file-invoice-dollar" },
+            { id: "CAT03", nama: "Poli & UKP", badgeColor: "bg-cyan-100 text-cyan-800", icon: "stethoscope" }
+        ];
 
-        // Master Data Initialization
-        let links = JSON.parse(localStorage.getItem("sikda_links")) || [
-            { id: "L01", judul: "Master SK & SOP Akreditasi 2026", url: "https://drive.google.com/", kategori: "Akreditasi", pic: "Tim Mutu", visibilitas: "ALL" },
-            { id: "L02", judul: "Laporan SPJ BOK Triwulan II", url: "https://drive.google.com/", kategori: "Keuangan", pic: "Bendahara BOK", visibilitas: "ADMIN" }
-        ];
-        let categories = JSON.parse(localStorage.getItem("sikda_categories")) || [
-            { id: "CAT01", nama: "Akreditasi", badgeColor: "bg-purple-100 text-theme-purple", icon: "fa-award", desc: "SK & Regulasi" },
-            { id: "CAT02", nama: "Keuangan", badgeColor: "bg-amber-100 text-amber-800", icon: "fa-file-invoice-dollar", desc: "BOK & JKN" },
-            { id: "CAT03", nama: "Poli & UKP", badgeColor: "bg-cyan-100 text-cyan-800", icon: "fa-stethoscope", desc: "Pelayanan Medis" }
-        ];
-        let comments = JSON.parse(localStorage.getItem("sikda_comments")) || [
-            { id: "C01", sender: "Bidan Aminah", unit: "Poli KIA", message: "Mohon diupdate SOP ANC terbaru.", timestamp: "Hari ini, 09:00" }
-        ];
-        let users = JSON.parse(localStorage.getItem("sikda_users")) || [
-            { id: "U01", username: "admin", nama: "Admin TU", role: "ADMIN", unit: "Tata Usaha", status: "AKTIF" },
-            { id: "U02", username: "bidan1", nama: "Siti Aminah", role: "STAFF", unit: "Poli KIA", status: "AKTIF" }
-        ];
-        let logs = JSON.parse(localStorage.getItem("sikda_logs")) || [
-            { id: "LOG01", timestamp: "Hari ini, 08:30", user: "Staf Publik", desc: "Membuka folder Master SK & SOP" }
-        ];
+        let state = { categories: [], links: [], comments: [], users: [], logs: [] };
 
         document.addEventListener("DOMContentLoaded", () => {
             initApiBadge();
-            renderAllViews();
+            loadInitialData();
         });
 
-        // Utilities
+        // UI HELPERS
         function showToast(title, msg) {
             const toast = document.getElementById("toast");
             document.getElementById("toast-title").innerText = title;
@@ -625,21 +528,24 @@
 
         function initApiBadge() {
             const badge = document.getElementById("api-status-badge");
-            if (apiConfig.gasUrl) {
+            const gasUrl = localStorage.getItem("sikda_gas_url");
+            if (gasUrl) {
                 badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-purple-600 animate-pulse"></span> GAS Sync`;
                 badge.className = "text-[10px] font-bold text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full flex items-center gap-1 border border-purple-200";
+            } else {
+                badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Local Fallback`;
+                badge.className = "text-[10px] font-bold text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full flex items-center gap-1 border border-emerald-200";
             }
         }
 
+        // TABS NAVIGATION
         function switchTab(tab) {
             currentTab = tab;
             ['overview', 'comments', 'links', 'categories', 'users', 'logs'].forEach(t => {
                 const content = document.getElementById(`tab-${t}-content`);
                 if (content) content.classList.add("hidden");
-                
                 const nav = document.getElementById(`nav-${t}`);
                 if (nav) nav.className = "w-12 h-12 rounded-2xl flex items-center justify-center text-white/70 hover:bg-white/10 transition-colors relative";
-                
                 const mNav = document.getElementById(`m-nav-${t}`);
                 if (mNav) mNav.className = "flex flex-col items-center gap-1 text-gray-400 px-3 relative";
             });
@@ -649,7 +555,7 @@
             
             const activeNav = document.getElementById(`nav-${tab}`);
             if (activeNav) activeNav.className = "w-12 h-12 rounded-2xl flex items-center justify-center bg-white text-theme-purple shadow-lg font-bold relative scale-110 transition-transform";
-
+            
             const mActiveNav = document.getElementById(`m-nav-${tab}`);
             if(mActiveNav) mActiveNav.className = "flex flex-col items-center gap-1 text-theme-purple font-bold px-3 relative";
 
@@ -658,20 +564,62 @@
             renderAllViews();
         }
 
+        // API INTEGRATION
+        async function fetchGAS(action, data = {}) {
+            const gasUrl = localStorage.getItem("sikda_gas_url");
+            const sheetId = localStorage.getItem("sikda_sheet_id");
+
+            if (!gasUrl || !sheetId) {
+                throw new Error("Local Mode");
+            }
+
+            const response = await fetch(gasUrl, {
+                method: "POST",
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify({ action, data, spreadsheetId: sheetId })
+            });
+
+            const result = await response.json();
+            if (!result.success) throw new Error(result.message);
+            return result;
+        }
+
+        async function loadInitialData() {
+            document.getElementById("loading-screen").classList.remove("hidden");
+            try {
+                const res = await fetchGAS("getAllData");
+                state.categories = res.data.categories.length > 0 ? res.data.categories : defaultCategories;
+                state.links = res.data.links || [];
+                state.comments = res.data.comments || [];
+                state.users = res.data.users || [];
+                state.logs = res.data.logs || [];
+            } catch (err) {
+                console.warn("Menggunakan Data Lokal Mock", err);
+                state.categories = JSON.parse(localStorage.getItem("sikda_categories")) || defaultCategories;
+                state.links = JSON.parse(localStorage.getItem("sikda_links")) || [];
+                state.comments = JSON.parse(localStorage.getItem("sikda_comments")) || [];
+                state.users = JSON.parse(localStorage.getItem("sikda_users")) || [];
+                state.logs = JSON.parse(localStorage.getItem("sikda_logs")) || [];
+            } finally {
+                document.getElementById("loading-screen").classList.add("hidden");
+                renderAllViews();
+            }
+        }
+
+        // RENDER LOGIC
         function renderAllViews() {
-            document.getElementById("stat-links-count").innerText = links.length;
-            document.getElementById("stat-comments-count").innerText = comments.length;
-            document.getElementById("stat-categories-count").innerText = categories.length;
+            document.getElementById("stat-total-links").innerText = state.links.length;
+            document.getElementById("stat-total-categories").innerText = state.categories.length;
+            document.getElementById("stat-total-comments").innerText = state.comments.length;
             
             const badge = document.getElementById("badge-comment-count");
-            if (comments.length > 0) {
-                badge.innerText = comments.length;
+            if (state.comments.length > 0) {
+                badge.innerText = state.comments.length;
                 badge.classList.remove("hidden");
             } else {
                 badge.classList.add("hidden");
             }
 
-            renderOverviewCategories();
             renderDynamicFilterPills();
             renderLinksGrid();
             renderCommentsTable();
@@ -679,44 +627,15 @@
             renderUsersTable();
             renderRightPanel();
             renderLogsList();
-            renderChart();
             
-            document.getElementById("form-kategori").innerHTML = categories.map(c => `<option value="${c.nama}">${c.nama}</option>`).join('');
-        }
-
-        function getEmptyStateHTML(title, desc) {
-            return `
-                <div class="col-span-full py-12 flex flex-col items-center justify-center text-center">
-                    <div class="w-16 h-16 bg-gray-100 text-gray-300 rounded-full flex items-center justify-center mb-3 text-3xl"><i class="fa-solid fa-folder-open"></i></div>
-                    <h3 class="font-display font-bold text-gray-700 text-lg">${title}</h3>
-                    <p class="text-xs text-gray-400 mt-1 max-w-xs">${desc}</p>
-                </div>
-            `;
-        }
-
-        function renderOverviewCategories() {
-            const container = document.getElementById("overview-category-cards");
-            container.innerHTML = categories.map(cat => {
-                const count = links.filter(l => l.kategori === cat.nama).length;
-                return `
-                    <div class="bg-white p-5 rounded-3xl border-2 border-white shadow-sm hover:shadow-soft-clay transition-all flex items-center gap-4 cursor-pointer" onclick="filterLinks('${cat.nama}')">
-                        <div class="w-12 h-12 rounded-2xl ${cat.badgeColor} flex items-center justify-center flex-shrink-0 text-xl">
-                            <i class="fa-solid ${cat.icon || 'fa-folder'}"></i>
-                        </div>
-                        <div>
-                            <h4 class="font-display font-bold text-theme-dark text-sm leading-tight">${cat.nama}</h4>
-                            <p class="text-[10px] text-gray-400 mt-1">${count} Dokumen Link</p>
-                        </div>
-                    </div>
-                `;
-            }).join('');
+            document.getElementById("form-kategori").innerHTML = state.categories.map(c => `<option value="${c.nama}">${c.nama}</option>`).join('');
         }
 
         function renderDynamicFilterPills() {
             const container = document.getElementById("category-filter-pills");
             const active = window.activeCategory || 'ALL';
             let html = `<button onclick="filterLinks('ALL')" class="px-4 py-2 rounded-xl text-xs font-bold transition-all ${active === 'ALL' ? 'bg-theme-purple text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}">Semua</button>`;
-            html += categories.map(c => `
+            html += state.categories.map(c => `
                 <button onclick="filterLinks('${c.nama}')" class="px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${active === c.nama ? 'bg-theme-purple text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}">${c.nama}</button>
             `).join('');
             container.innerHTML = html;
@@ -733,19 +652,19 @@
             const query = (document.getElementById("link-search-input")?.value || "").toLowerCase();
             const activeCat = window.activeCategory || 'ALL';
 
-            const filtered = links.filter(l => {
+            const filtered = state.links.filter(l => {
                 if(activeCat !== 'ALL' && l.kategori !== activeCat) return false;
                 if(query && !l.judul.toLowerCase().includes(query)) return false;
                 return true;
             });
 
             if(filtered.length === 0) {
-                container.innerHTML = getEmptyStateHTML("Tautan Kosong", "Belum ada dokumen yang sesuai.");
+                container.innerHTML = `<div class="col-span-full py-12 text-center text-gray-400 text-xs">Belum ada dokumen yang sesuai.</div>`;
                 return;
             }
 
-            container.innerHTML = filtered.map((l, i) => {
-                const catInfo = categories.find(c => c.nama === l.kategori) || { badgeColor: 'bg-gray-100 text-gray-600' };
+            container.innerHTML = filtered.map(l => {
+                const catInfo = state.categories.find(c => c.nama === l.kategori) || { badgeColor: 'bg-gray-100 text-gray-600' };
                 return `
                     <div class="bg-white p-5 rounded-3xl border-2 border-white shadow-sm hover:shadow-purple-clay transition-all flex flex-col justify-between group">
                         <div>
@@ -758,7 +677,7 @@
                         </div>
                         <div class="flex items-center justify-between pt-4 mt-4 border-t border-gray-100">
                             <a href="${l.url}" target="_blank" class="text-[11px] font-bold text-theme-purple bg-theme-purplebg px-3 py-1.5 rounded-lg hover:bg-theme-purple hover:text-white transition-colors">Buka Folder ↗</a>
-                            <button onclick="requireConfirm('Anda yakin ingin menghapus link dokumen ini?', () => deleteLink(${i}))" class="text-gray-300 hover:text-red-500 p-1 bg-gray-50 rounded-lg hover:bg-red-50 transition-colors"><i class="fa-solid fa-trash-can"></i></button>
+                            <button onclick="requireConfirm('Hapus link dokumen ini?', () => handleDeleteLink('${l.id}'))" class="text-gray-300 hover:text-red-500 p-1 bg-gray-50 rounded-lg hover:bg-red-50 transition-colors"><i class="fa-solid fa-trash-can"></i></button>
                         </div>
                     </div>
                 `;
@@ -769,14 +688,14 @@
             const w1 = document.getElementById("recent-comments-widget");
             const w2 = document.getElementById("comments-table-container");
 
-            if(comments.length === 0) {
-                const emptyHtml = getEmptyStateHTML("Aman Terkendali!", "Belum ada catatan atau laporan revisi berkas dari staf poli.");
+            if(state.comments.length === 0) {
+                const emptyHtml = `<div class="py-8 text-center text-gray-400 text-xs">Belum ada catatan dari staf.</div>`;
                 if(w1) w1.innerHTML = emptyHtml;
                 if(w2) w2.innerHTML = emptyHtml;
                 return;
             }
 
-            const html = comments.map((c, i) => `
+            const html = state.comments.map(c => `
                 <div class="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
                     <div class="flex gap-4 items-start">
                         <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-orange-100 to-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0 text-lg">
@@ -791,7 +710,7 @@
                             <p class="text-[10px] text-gray-400 mt-1">${c.timestamp}</p>
                         </div>
                     </div>
-                    <button onclick="requireConfirm('Tandai komentar ini sudah selesai dan hapus dari daftar?', () => deleteComment(${i}))" class="bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white px-3 py-2 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 flex-shrink-0">
+                    <button onclick="requireConfirm('Tandai catatan ini selesai?', () => handleDeleteComment('${c.id}'))" class="bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white px-3 py-2 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 flex-shrink-0">
                         <i class="fa-solid fa-circle-check"></i> Selesai
                     </button>
                 </div>
@@ -802,9 +721,9 @@
         }
 
         function renderCategoriesTable() {
-            const container = document.getElementById("categories-list-container");
-            container.innerHTML = categories.map((c, i) => {
-                const count = links.filter(l => l.kategori === c.nama).length;
+            const tbody = document.getElementById("categories-table-body");
+            tbody.innerHTML = state.categories.map(c => {
+                const count = state.links.filter(l => l.kategori === c.nama).length;
                 return `
                     <tr class="hover:bg-gray-50/50 transition-colors">
                         <td class="py-3 px-3 font-bold text-theme-dark">${c.nama}</td>
@@ -812,11 +731,10 @@
                             <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${c.badgeColor}">Preview</span>
                         </td>
                         <td class="py-3 px-3 text-gray-500 font-mono text-[11px] flex items-center gap-1.5">
-                            <i class="fa-solid ${c.icon || 'fa-folder'} text-theme-purple"></i> ${c.icon}
+                            <i class="fa-solid fa-${c.icon || 'folder'} text-theme-purple"></i> ${c.icon}
                         </td>
-                        <td class="py-3 px-3 font-bold text-theme-purple">${count} Folder</td>
                         <td class="py-3 px-3 text-right">
-                            <button onclick="requireConfirm('Hapus kategori ini?', () => deleteCategory(${i}))" class="text-gray-400 hover:text-red-500 p-1"><i class="fa-solid fa-trash-can"></i></button>
+                            <button onclick="requireConfirm('Hapus kategori ini?', () => handleDeleteCategory('${c.id}'))" class="text-gray-400 hover:text-red-500 p-1"><i class="fa-solid fa-trash-can"></i></button>
                         </td>
                     </tr>
                 `;
@@ -825,28 +743,22 @@
 
         function renderUsersTable() {
             const tbody = document.getElementById("users-table-body");
-            tbody.innerHTML = users.map((u, i) => `
+            tbody.innerHTML = state.users.map(u => `
                 <tr class="hover:bg-gray-50/50 transition-colors">
                     <td class="py-3 px-4">
-                        <div class="flex items-center gap-2">
-                            <div class="w-8 h-8 rounded-xl bg-gray-100 text-gray-500 font-bold flex items-center justify-center text-xs uppercase">${u.nama.charAt(0)}</div>
-                            <div>
-                                <p class="font-bold text-xs text-theme-dark">${u.nama}</p>
-                                <p class="text-[10px] text-gray-400">@${u.username}</p>
-                            </div>
-                        </div>
+                        <p class="font-bold text-xs text-theme-dark">${u.nama}</p>
+                        <p class="text-[10px] text-gray-400">@${u.username}</p>
                     </td>
                     <td class="py-3 px-4"><span class="px-2.5 py-1 rounded-lg text-[10px] font-bold ${u.role==='ADMIN'?'bg-theme-purple/10 text-theme-purple':'bg-gray-100 text-gray-600'}">${u.role}</span></td>
                     <td class="py-3 px-4 text-xs text-gray-600">${u.unit}</td>
-                    <td class="py-3 px-4 text-center"><span class="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full text-[10px] font-bold">● ${u.status}</span></td>
-                    <td class="py-3 px-4 text-right"><button onclick="requireConfirm('Hapus akun user ini?', () => deleteUser(${i}))" class="w-7 h-7 rounded-lg bg-gray-50 text-gray-400 hover:bg-red-50 hover:text-red-500 inline-flex items-center justify-center transition-colors"><i class="fa-solid fa-trash-can"></i></button></td>
+                    <td class="py-3 px-4 text-right"><button onclick="requireConfirm('Hapus user ini?', () => handleDeleteUser('${u.id}'))" class="w-7 h-7 rounded-lg bg-gray-50 text-gray-400 hover:bg-red-50 hover:text-red-500 inline-flex items-center justify-center transition-colors"><i class="fa-solid fa-trash-can"></i></button></td>
                 </tr>
             `).join('');
         }
 
         function renderLogsList() {
             const container = document.getElementById("logs-timeline-container");
-            container.innerHTML = logs.map(l => `
+            container.innerHTML = state.logs.map(l => `
                 <div class="flex items-start gap-3 p-3 bg-gray-50/80 rounded-2xl text-xs">
                     <div class="w-8 h-8 rounded-xl bg-theme-purplebg text-theme-purple flex items-center justify-center flex-shrink-0 font-bold text-sm">
                         <i class="fa-solid fa-chart-line"></i>
@@ -861,7 +773,7 @@
 
         function renderRightPanel() {
             const list = document.getElementById("online-users-list");
-            list.innerHTML = users.filter(u=>u.role==='STAFF').slice(0,3).map(u => `
+            list.innerHTML = state.users.filter(u=>u.role==='STAFF').slice(0,3).map(u => `
                 <div class="flex items-center justify-between p-2 hover:bg-white rounded-2xl transition-colors">
                     <div class="flex items-center gap-3">
                         <div class="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 font-bold flex items-center justify-center text-xs border border-emerald-100 uppercase">
@@ -875,131 +787,188 @@
                     <span class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
                 </div>
             `).join('');
-
-            const miniLogs = document.getElementById("mini-activity-list");
-            miniLogs.innerHTML = logs.slice(0, 3).map(l => `
-                <div class="border-l-2 border-theme-purple pl-3 py-1">
-                    <p class="font-semibold text-theme-dark line-clamp-1">${l.desc}</p>
-                    <p class="text-[10px] text-gray-400">${l.timestamp}</p>
-                </div>
-            `).join('');
-            
-            document.getElementById("chart-visit-tag").innerText = `${logs.length} Kunjungan`;
         }
 
-        function renderChart() {
-            const ctx = document.getElementById('activityChart');
-            if(!ctx) return;
-            
-            if(chartInstance) chartInstance.destroy();
-            
-            // Dummy logic for monthly chart based on logs count
-            let dataPoints = [12, 19, 15, 25, 22, 30, logs.length + 10]; 
-            
-            chartInstance = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul'],
-                    datasets: [{
-                        label: 'Kunjungan Link',
-                        data: dataPoints,
-                        borderColor: '#FF5079',
-                        backgroundColor: 'rgba(255, 80, 121, 0.2)',
-                        borderWidth: 3,
-                        tension: 0.4,
-                        fill: true,
-                        pointBackgroundColor: '#FFFFFF',
-                        pointBorderColor: '#FF5079',
-                        pointBorderWidth: 2,
-                        pointRadius: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { display: false },
-                        y: { display: false, min: 0 }
-                    },
-                    interaction: { mode: 'index', intersect: false }
-                }
-            });
-        }
-
-        // --- MODALS & CRUD LOGIC --- //
+        // CRUD OPERATIONS TO BACKEND
         function openAddLinkModal() { document.getElementById("modal-link").classList.remove("hidden"); }
         function openAddCategoryModal() { document.getElementById("modal-category").classList.remove("hidden"); }
         function openAddUserModal() { document.getElementById("modal-user").classList.remove("hidden"); }
         function openApiConfigModal() { 
-            document.getElementById("cfg-gas-url").value = apiConfig.gasUrl;
-            document.getElementById("cfg-sheet-id").value = apiConfig.spreadsheetId;
+            document.getElementById("cfg-gas-url").value = localStorage.getItem("sikda_gas_url");
+            document.getElementById("cfg-sheet-id").value = localStorage.getItem("sikda_sheet_id");
             document.getElementById("modal-api-config").classList.remove("hidden"); 
         }
         function closeModal(id) { document.getElementById(id).classList.add("hidden"); }
 
-        function handleSaveLink(e) {
+        async function handleSaveLink(e) {
             e.preventDefault();
-            links.unshift({
+            const btn = document.getElementById("btn-save-link");
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Loading...`;
+            
+            const newLink = {
                 id: "L" + Date.now(),
                 judul: document.getElementById("form-judul").value,
                 url: document.getElementById("form-url").value,
                 kategori: document.getElementById("form-kategori").value,
                 pic: document.getElementById("form-pic").value,
-                visibilitas: document.getElementById("form-visibilitas").value
-            });
-            localStorage.setItem("sikda_links", JSON.stringify(links));
-            closeModal("modal-link"); e.target.reset(); renderAllViews();
-            showToast("Sukses", "Tautan cloud tersimpan");
+                visibilitas: document.getElementById("form-visibilitas").value,
+                updatedAt: new Date().toISOString().split('T')[0]
+            };
+
+            try {
+                await fetchGAS("addLink", newLink);
+                await loadInitialData();
+                showToast("Sukses", "Tautan cloud tersimpan di database.");
+            } catch(err) {
+                state.links.unshift(newLink);
+                localStorage.setItem("sikda_links", JSON.stringify(state.links));
+                renderAllViews();
+                showToast("Local Sukses", "Tautan tersimpan secara lokal.");
+            } finally {
+                closeModal("modal-link"); e.target.reset();
+                btn.innerHTML = `Simpan Tautan`;
+            }
         }
 
-        function handleSaveCategory(e) {
+        async function handleSaveCategory(e) {
             e.preventDefault();
-            categories.push({
+            const btn = document.getElementById("btn-save-cat");
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Loading...`;
+            
+            const newCat = {
                 id: "CAT" + Date.now(),
                 nama: document.getElementById("cat-nama").value,
                 badgeColor: document.getElementById("cat-color").value,
-                icon: document.getElementById("cat-icon").value
-            });
-            localStorage.setItem("sikda_categories", JSON.stringify(categories));
-            closeModal("modal-category"); e.target.reset(); renderAllViews();
-            showToast("Sukses", "Kategori fleksibel ditambahkan");
+                icon: document.getElementById("cat-icon").value,
+                desc: "Kategori Baru"
+            };
+
+            try {
+                await fetchGAS("saveCategory", newCat);
+                await loadInitialData();
+                showToast("Sukses", "Kategori ditambahkan di database.");
+            } catch(err) {
+                state.categories.push(newCat);
+                localStorage.setItem("sikda_categories", JSON.stringify(state.categories));
+                renderAllViews();
+                showToast("Local Sukses", "Kategori tersimpan lokal.");
+            } finally {
+                closeModal("modal-category"); e.target.reset();
+                btn.innerHTML = `Simpan Kategori`;
+            }
         }
 
-        function handleSaveUser(e) {
+        async function handleSaveUser(e) {
             e.preventDefault();
-            users.push({
+            const btn = document.getElementById("btn-save-user");
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Loading...`;
+            
+            const newUser = {
                 id: "U" + Date.now(),
                 nama: document.getElementById("user-nama").value,
                 username: document.getElementById("user-username").value,
                 role: document.getElementById("user-role").value,
                 unit: document.getElementById("user-unit").value,
+                password: "defaultpassword",
                 status: "AKTIF"
-            });
-            localStorage.setItem("sikda_users", JSON.stringify(users));
-            closeModal("modal-user"); e.target.reset(); renderAllViews();
-            showToast("Sukses", "Akses user ditambahkan");
+            };
+
+            try {
+                await fetchGAS("addUser", newUser);
+                await loadInitialData();
+                showToast("Sukses", "User ditambahkan.");
+            } catch(err) {
+                state.users.push(newUser);
+                localStorage.setItem("sikda_users", JSON.stringify(state.users));
+                renderAllViews();
+                showToast("Local Sukses", "User tersimpan lokal.");
+            } finally {
+                closeModal("modal-user"); e.target.reset();
+                btn.innerHTML = `Buat Akun`;
+            }
+        }
+
+        async function handleDeleteLink(id) {
+            document.getElementById("loading-screen").classList.remove("hidden");
+            try {
+                await fetchGAS("deleteLink", { id });
+                await loadInitialData();
+                showToast("Terhapus", "Data link dihapus.");
+            } catch(err) {
+                state.links = state.links.filter(l => l.id !== id);
+                localStorage.setItem("sikda_links", JSON.stringify(state.links));
+                renderAllViews();
+                showToast("Local Terhapus", "Link dihapus lokal.");
+            } finally {
+                document.getElementById("loading-screen").classList.add("hidden");
+            }
+        }
+
+        async function handleDeleteCategory(id) {
+            document.getElementById("loading-screen").classList.remove("hidden");
+            try {
+                await fetchGAS("deleteCategory", { id });
+                await loadInitialData();
+                showToast("Terhapus", "Kategori dihapus.");
+            } catch(err) {
+                state.categories = state.categories.filter(c => c.id !== id);
+                localStorage.setItem("sikda_categories", JSON.stringify(state.categories));
+                renderAllViews();
+                showToast("Local Terhapus", "Kategori dihapus lokal.");
+            } finally {
+                document.getElementById("loading-screen").classList.add("hidden");
+            }
+        }
+
+        async function handleDeleteComment(id) {
+            document.getElementById("loading-screen").classList.remove("hidden");
+            try {
+                await fetchGAS("deleteComment", { id });
+                await loadInitialData();
+                showToast("Selesai", "Catatan selesai ditinjau.");
+            } catch(err) {
+                state.comments = state.comments.filter(c => c.id !== id);
+                localStorage.setItem("sikda_comments", JSON.stringify(state.comments));
+                renderAllViews();
+                showToast("Selesai", "Catatan selesai lokal.");
+            } finally {
+                document.getElementById("loading-screen").classList.add("hidden");
+            }
+        }
+
+        async function handleDeleteUser(id) {
+            document.getElementById("loading-screen").classList.remove("hidden");
+            try {
+                await fetchGAS("deleteUser", { id });
+                await loadInitialData();
+                showToast("Terhapus", "User dihapus.");
+            } catch(err) {
+                state.users = state.users.filter(u => u.id !== id);
+                localStorage.setItem("sikda_users", JSON.stringify(state.users));
+                renderAllViews();
+                showToast("Local Terhapus", "User dihapus lokal.");
+            } finally {
+                document.getElementById("loading-screen").classList.add("hidden");
+            }
         }
 
         function handleSaveApiConfig(e) {
             e.preventDefault();
-            apiConfig.gasUrl = document.getElementById("cfg-gas-url").value;
-            apiConfig.spreadsheetId = document.getElementById("cfg-sheet-id").value;
-            localStorage.setItem("sikda_gas_url", apiConfig.gasUrl);
-            localStorage.setItem("sikda_sheet_id", apiConfig.spreadsheetId);
-            closeModal("modal-api-config"); initApiBadge();
-            showToast("Terhubung", "Konfigurasi Database tersimpan");
+            const gasUrl = document.getElementById("cfg-gas-url").value;
+            const sheetId = document.getElementById("cfg-sheet-id").value;
+            localStorage.setItem("sikda_gas_url", gasUrl);
+            localStorage.setItem("sikda_sheet_id", sheetId);
+            closeModal("modal-api-config"); 
+            initApiBadge();
+            showToast("Terhubung", "Konfigurasi Database tersimpan, mereload data...");
+            loadInitialData();
         }
-
-        function deleteLink(i) { links.splice(i, 1); localStorage.setItem("sikda_links", JSON.stringify(links)); renderAllViews(); showToast("Terhapus", "Data link dihapus.");}
-        function deleteCategory(i) { categories.splice(i, 1); localStorage.setItem("sikda_categories", JSON.stringify(categories)); renderAllViews(); showToast("Terhapus", "Kategori dihapus."); }
-        function deleteComment(i) { comments.splice(i, 1); localStorage.setItem("sikda_comments", JSON.stringify(comments)); renderAllViews(); showToast("Selesai", "Catatan telah ditandai selesai."); }
-        function deleteUser(i) { users.splice(i, 1); localStorage.setItem("sikda_users", JSON.stringify(users)); renderAllViews(); showToast("Terhapus", "User dihapus.");}
 
         function handleAdminLogout() {
             localStorage.removeItem("sikda_admin_logged");
             window.location.href = "login.html";
         }
+
         function handleGlobalSearch(val) {
             if(currentTab !== 'links') switchTab('links');
             document.getElementById("link-search-input").value = val;
