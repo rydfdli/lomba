@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SIKDA-Link | Login Admin</title>
+    <title>SIKDA-Link | Login Admin Puskesmas</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17,12 +17,9 @@
                 extend: {
                     colors: {
                         theme: {
-                            purple: '#5E44C2',
-                            pink: '#FF1268',
-                            yellow: '#FFDF00',
-                            yellowhover: '#E6C800',
-                            dark: '#0F172A',
-                            bg: '#EFF2F9'
+                            purple: '#5E44C2', pink: '#FF1268',
+                            yellow: '#FFDF00', yellowhover: '#E6C800',
+                            dark: '#0F172A'
                         }
                     },
                     fontFamily: {
@@ -39,7 +36,7 @@
         }
     </script>
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #EFF2F9; color: #0F172A; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #EFF2F9; color: #0F172A; -webkit-tap-highlight-color: transparent;}
     </style>
 </head>
 <body class="min-h-full flex flex-col justify-center items-center p-4 sm:p-6 relative overflow-x-hidden">
@@ -72,7 +69,7 @@
                 <i class="fa-solid fa-wand-magic-sparkles text-theme-yellow"></i> Kredensial Demo:
             </span>
             <button type="button" onclick="quickFillAdmin()" class="px-3 py-1.5 bg-white hover:bg-purple-50 text-theme-purple rounded-lg text-[10px] font-bold border border-gray-200 transition-colors">
-                ⚡ Isi Cepat Sandi
+                ⚡ Isi Login Admin
             </button>
         </div>
 
@@ -112,6 +109,7 @@
                 <span>Kembali ke Portal Publik</span>
             </a>
         </div>
+
     </main>
 
     <footer class="mt-6 text-center text-xs text-gray-400 font-medium z-10">
@@ -119,10 +117,18 @@
     </footer>
 
     <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            quickFillAdmin();
+        });
+
         function showToast(title, msg, isError = false) {
             const toast = document.getElementById("toast");
             document.getElementById("toast-title").innerText = title;
             document.getElementById("toast-msg").innerText = msg;
+            
+            const icon = document.getElementById("toast-icon");
+            icon.className = isError ? "fa-solid fa-triangle-exclamation text-red-500 text-xl" : "fa-solid fa-shield-halved text-theme-pink text-xl";
+
             toast.classList.remove("translate-x-full");
             setTimeout(() => { toast.classList.add("translate-x-full"); }, 3000);
         }
@@ -137,29 +143,71 @@
             const eyeIcon = document.getElementById("eye-icon");
             if (passInput.type === "password") {
                 passInput.type = "text";
-                eyeIcon.classList.remove("fa-eye");
-                eyeIcon.classList.add("fa-eye-slash");
+                eyeIcon.classList.replace("fa-eye", "fa-eye-slash");
             } else {
                 passInput.type = "password";
-                eyeIcon.classList.remove("fa-eye-slash");
-                eyeIcon.classList.add("fa-eye");
+                eyeIcon.classList.replace("fa-eye-slash", "fa-eye");
             }
         }
 
-        function handleLoginSubmit(e) {
+        async function handleLoginSubmit(e) {
             e.preventDefault();
             const u = document.getElementById("username").value.trim();
             const p = document.getElementById("password").value.trim();
+            const btn = document.getElementById("btn-submit");
+            
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>MEMVERIFIKASI...</span>`;
+            btn.disabled = true;
 
-            // Default Check
-            if (u === "admin" && p === "admin123") {
-                localStorage.setItem("sikda_admin_logged", "true");
-                showToast("Login Berhasil", "Mengarahkan ke dashboard admin...");
-                setTimeout(() => {
-                    window.location.href = "dashboard.html";
-                }, 800);
-            } else {
-                showToast("Login Gagal", "Username atau password admin salah!", true);
+            const gasUrl = localStorage.getItem("sikda_gas_url");
+            const sheetId = localStorage.getItem("sikda_sheet_id");
+
+            // Attempt to login via GAS
+            if (gasUrl && sheetId) {
+                try {
+                    const response = await fetch(gasUrl, {
+                        method: "POST",
+                        headers: { "Content-Type": "text/plain;charset=utf-8" },
+                        body: JSON.stringify({ action: "login", data: { username: u, password: p }, spreadsheetId: sheetId })
+                    });
+                    const res = await response.json();
+
+                    if (res.success) {
+                        if (res.user.role !== 'ADMIN') {
+                            showToast("Ditolak", "Panel ini khusus untuk Administrator TU.", true);
+                            resetBtn();
+                            return;
+                        }
+                        localStorage.setItem("sikda_admin_logged", "true");
+                        localStorage.setItem("sikda_user", JSON.stringify(res.user));
+                        showToast("Berhasil", "Mengarahkan ke dashboard admin...");
+                        setTimeout(() => window.location.href = "dashboard.html", 800);
+                        return;
+                    } else {
+                        showToast("Gagal", res.message || "Kredensial tidak valid", true);
+                        resetBtn();
+                        return;
+                    }
+                } catch(err) {
+                    console.warn("GAS Error, falling back to local auth", err);
+                }
+            }
+
+            // Fallback Local Mock Auth
+            setTimeout(() => {
+                if (u === "admin" && p === "admin123") {
+                    localStorage.setItem("sikda_admin_logged", "true");
+                    showToast("Login Local", "Mengarahkan ke dashboard admin...");
+                    setTimeout(() => window.location.href = "dashboard.html", 800);
+                } else {
+                    showToast("Login Gagal", "Username atau password admin salah!", true);
+                    resetBtn();
+                }
+            }, 600);
+
+            function resetBtn() {
+                btn.innerHTML = `<span>MASUK DASHBOARD</span> <i class="fa-solid fa-arrow-right"></i>`;
+                btn.disabled = false;
             }
         }
     </script>

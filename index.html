@@ -1,214 +1,512 @@
 <!DOCTYPE html>
-<html lang="id" class="h-full">
+<html lang="id" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SIKDA-Link | Login Admin Puskesmas</title>
+    <title>SIKDA-Link | Portal Cloud Dokumen Puskesmas</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-
+    
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
                         theme: {
-                            purple: '#5E44C2', pink: '#FF1268',
-                            yellow: '#FFDF00', yellowhover: '#E6C800',
-                            dark: '#0F172A'
+                            purple: '#5E44C2', pink: '#FF1268', pinkhover: '#D9004C',
+                            yellow: '#FFDF00', yellowhover: '#E6C800', cyan: '#00E5FF',
+                            bg: '#FAFAFC', dark: '#0F172A'
                         }
                     },
                     fontFamily: {
                         sans: ['Plus Jakarta Sans', 'sans-serif'],
                         display: ['Fredoka', 'cursive']
                     },
-                    borderRadius: { '4xl': '2.25rem', '5xl': '3rem' },
+                    borderRadius: { '4xl': '2.5rem', '5xl': '3rem' },
                     boxShadow: {
-                        'playful': '0 20px 40px -15px rgba(94, 68, 194, 0.22)',
-                        'yellow-glow': '0 10px 25px -5px rgba(255, 223, 0, 0.45)'
+                        'playful': '0 20px 40px -15px rgba(255, 18, 104, 0.18)',
+                        'yellow-glow': '0 10px 25px -5px rgba(255, 223, 0, 0.5)',
+                        'card-hover': '0 25px 50px -12px rgba(15, 23, 42, 0.12)'
                     }
                 }
             }
         }
     </script>
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #EFF2F9; color: #0F172A; -webkit-tap-highlight-color: transparent;}
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #FAFAFC; color: #0F172A; -webkit-tap-highlight-color: transparent; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-thumb { background: #FF1268; border-radius: 9999px; }
     </style>
 </head>
-<body class="min-h-full flex flex-col justify-center items-center p-4 sm:p-6 relative overflow-x-hidden">
+<body class="min-h-screen flex flex-col justify-between overflow-x-hidden selection:bg-theme-pink selection:text-white relative">
 
-    <div class="fixed -top-24 -left-24 w-80 h-80 bg-theme-purple/20 rounded-full blur-3xl pointer-events-none"></div>
-    <div class="fixed -bottom-24 -right-24 w-80 h-80 bg-theme-pink/15 rounded-full blur-3xl pointer-events-none"></div>
+    <!-- Loading Overlay -->
+    <div id="loading-screen" class="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-center justify-center flex-col gap-3 hidden">
+        <i class="fa-solid fa-circle-notch fa-spin text-4xl text-theme-pink"></i>
+        <p class="font-display font-bold text-theme-dark text-lg animate-pulse">Menyinkronkan Data...</p>
+    </div>
 
-    <div id="toast" class="fixed top-5 right-5 z-50 transform translate-x-full transition-transform duration-300 ease-out bg-theme-dark text-white px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 border border-white/10 max-w-sm">
-        <i class="fa-solid fa-shield-halved text-theme-pink text-xl" id="toast-icon"></i>
-        <div>
-            <p id="toast-title" class="font-bold text-xs text-white">Status</p>
-            <p id="toast-msg" class="text-[11px] text-gray-300">Pesan notifikasi.</p>
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-5 right-5 z-50 transform translate-x-full transition-transform duration-300 bg-theme-dark text-white px-6 py-4 rounded-3xl shadow-2xl flex items-center gap-3 border-2 border-theme-yellow">
+        <i class="fa-solid fa-circle-check text-theme-yellow text-xl"></i>
+        <span id="toast-message" class="font-medium text-sm">Notifikasi</span>
+    </div>
+
+    <nav class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100 py-4 px-6 md:px-12">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <a href="#" class="flex items-center gap-3 group">
+                <div class="w-12 h-12 bg-theme-pink rounded-2xl flex items-center justify-center text-white shadow-playful group-hover:rotate-6 transition-transform text-xl">
+                    <i class="fa-solid fa-cloud-bolt text-theme-yellow"></i>
+                </div>
+                <div>
+                    <span class="font-display font-bold text-2xl tracking-wide text-theme-dark">SIKDA<span class="text-theme-pink">.Link</span></span>
+                    <p class="text-[10px] font-semibold tracking-wider text-gray-400 uppercase -mt-1">Puskesmas Cloud Hub</p>
+                </div>
+            </a>
+
+            <div class="hidden md:flex items-center gap-8 font-medium text-sm text-gray-600">
+                <a href="#hero" class="hover:text-theme-pink transition-colors">Beranda</a>
+                <a href="#kategori" class="hover:text-theme-pink transition-colors">Kategori</a>
+                <a href="#directory" class="hover:text-theme-pink transition-colors">Direktori Folder</a>
+            </div>
+
+            <div id="auth-nav-container" class="flex items-center gap-3">
+                <a id="nav-login-btn" href="login.html" class="bg-theme-yellow hover:bg-theme-yellowhover text-theme-dark font-bold px-5 py-2.5 rounded-full text-xs sm:text-sm shadow-yellow-glow transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-2">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <span id="nav-login-text">ADMIN LOGIN</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <section id="hero" class="relative pt-8 pb-16 md:py-20 px-6 md:px-12 overflow-hidden bg-theme-pink text-white rounded-b-5xl shadow-playful">
+        <div class="absolute -top-10 -left-10 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
+        <div class="absolute bottom-10 right-10 w-60 h-60 bg-theme-yellow/20 rounded-full blur-3xl"></div>
+
+        <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            <div class="lg:col-span-7 space-y-6 text-center lg:text-left z-10">
+                <div class="inline-flex items-center gap-2 bg-white/15 backdrop-blur-md border border-white/20 px-4 py-2 rounded-full text-xs font-semibold tracking-wide text-theme-yellow">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span>PORTAL REPOSITORI PUBLIK PUSKESMAS</span>
+                </div>
+
+                <h1 class="font-display text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight">
+                    AKSES DOKUMEN CLOUD <span class="text-theme-yellow underline decoration-wavy decoration-2">PUSKESMAS</span> TANPA RIBET!
+                </h1>
+
+                <p class="text-white/80 text-base sm:text-lg max-w-2xl font-light">
+                    Langsung cari, buka, dan berikan catatan/laporan revisi untuk dokumen Akreditasi, Keuangan, maupun SOP Pelayanan tanpa perlu antre login.
+                </p>
+
+                <div class="pt-2 max-w-xl mx-auto lg:mx-0">
+                    <div class="bg-white p-2 rounded-full shadow-2xl flex items-center gap-2">
+                        <i class="fa-solid fa-magnifying-glass text-gray-400 ml-4"></i>
+                        <input type="text" id="hero-search-input" placeholder="Cari misal: 'SPJ BOK', 'SOP Farmasi', 'Gizi'..." 
+                               class="w-full text-theme-dark px-2 py-3 text-sm md:text-base focus:outline-none placeholder-gray-400">
+                        <button onclick="scrollToDirectoryWithSearch()" class="bg-theme-yellow hover:bg-theme-yellowhover text-theme-dark font-bold px-6 py-3.5 rounded-full text-sm transition-all flex items-center gap-2 flex-shrink-0">
+                            <span>CARI</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-5 relative flex justify-center">
+                <div class="bg-white text-theme-dark p-6 sm:p-8 rounded-4xl shadow-2xl border-4 border-white/30 transform lg:rotate-2 hover:rotate-0 transition-all duration-500 max-w-md w-full relative z-10">
+                    <div class="flex justify-between items-center mb-6">
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full bg-red-400 inline-block"></span>
+                            <span class="w-3 h-3 rounded-full bg-yellow-400 inline-block"></span>
+                            <span class="w-3 h-3 rounded-full bg-green-400 inline-block"></span>
+                        </div>
+                        <span class="bg-theme-pink/10 text-theme-pink text-xs font-bold px-3 py-1 rounded-full">⭐ DOKUMEN UTAMA</span>
+                    </div>
+
+                    <div class="bg-gradient-to-br from-teal-100 to-cyan-50 p-6 rounded-3xl text-center mb-6 relative overflow-hidden group">
+                        <div class="w-20 h-20 bg-theme-pink rounded-3xl mx-auto flex items-center justify-center text-white shadow-playful mb-3 group-hover:scale-110 transition-transform text-4xl">
+                            <i class="fa-solid fa-folder-open text-theme-yellow"></i>
+                        </div>
+                        <h3 class="font-display text-xl font-bold text-gray-800">Folder Akreditasi 2026</h3>
+                        <p class="text-xs text-gray-500 mt-1">Lengkap Bab 1 KMP s/d Bab 5 PPI</p>
+                    </div>
+
+                    <a href="#directory" class="w-full bg-theme-yellow hover:bg-theme-yellowhover text-theme-dark font-display font-bold py-3.5 px-4 rounded-full text-center block shadow-yellow-glow transition-all">
+                        EKSPLOR DOKUMEN PUBLIK
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="kategori" class="py-16 px-6 md:px-12 max-w-7xl mx-auto">
+        <div class="text-center max-w-2xl mx-auto mb-12">
+            <span class="text-theme-pink font-bold text-xs uppercase tracking-wider bg-theme-pink/10 px-4 py-2 rounded-full">KATEGORI CLOUD</span>
+            <h2 class="font-display text-3xl font-bold text-theme-dark mt-3">Pilih Kategori Folder Kerja</h2>
+        </div>
+        <div id="categories-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <!-- Dynamically Rendered Categories -->
+        </div>
+    </section>
+
+    <section id="directory" class="py-16 px-6 md:px-12 bg-white border-y border-gray-100">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+                <div>
+                    <span class="text-theme-pink font-bold text-xs uppercase tracking-wider">DIREKTORI TAUTAN</span>
+                    <h2 class="font-display text-3xl font-bold text-theme-dark mt-1">Semua Link Cloud Storage</h2>
+                </div>
+            </div>
+
+            <div class="bg-[#FAFAFC] p-4 md:p-6 rounded-3xl border border-gray-200/80 mb-8 space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+                    <div class="md:col-span-7 relative">
+                        <i class="fa-solid fa-magnifying-glass text-gray-400 absolute left-4 top-1/2 -translate-y-1/2"></i>
+                        <input type="text" id="directory-search" oninput="renderLinks()" placeholder="Ketik nama dokumen, PIC, atau kata kunci..." 
+                               class="w-full bg-white border border-gray-200 text-theme-dark pl-11 pr-4 py-3 rounded-2xl text-sm focus:outline-none focus:border-theme-pink">
+                    </div>
+
+                    <div class="md:col-span-5 relative">
+                        <i class="fa-solid fa-filter text-gray-400 absolute left-4 top-1/2 -translate-y-1/2"></i>
+                        <select id="category-filter" onchange="renderLinks()" class="w-full bg-white border border-gray-200 text-theme-dark pl-11 pr-8 py-3 rounded-2xl text-sm focus:outline-none focus:border-theme-pink appearance-none cursor-pointer">
+                        </select>
+                        <i class="fa-solid fa-chevron-down text-gray-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div id="link-cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Cards render dynamically -->
+            </div>
+
+            <div id="empty-state" class="hidden text-center py-16">
+                <div class="w-20 h-20 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+                    <i class="fa-solid fa-folder-open"></i>
+                </div>
+                <h3 class="font-display text-lg font-bold text-gray-700">Tautan Tidak Ditemukan</h3>
+                <p class="text-sm text-gray-400 mt-1">Coba gunakan kata kunci atau kategori lain.</p>
+            </div>
+        </div>
+    </section>
+
+    <div id="comment-modal" class="fixed inset-0 bg-theme-dark/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white w-full max-w-lg rounded-4xl p-6 sm:p-8 shadow-2xl relative max-h-[90vh] flex flex-col border-4 border-white">
+            <button onclick="closeCommentModal()" class="absolute top-6 right-6 text-gray-400 hover:text-theme-dark text-xl"><i class="fa-solid fa-xmark"></i></button>
+
+            <div class="flex items-center gap-3 mb-4 pb-3 border-b">
+                <div class="w-12 h-12 bg-theme-pink text-white rounded-2xl flex items-center justify-center shadow-playful flex-shrink-0 text-xl">
+                    <i class="fa-solid fa-comments text-theme-yellow"></i>
+                </div>
+                <div>
+                    <h3 id="comment-target-title" class="font-display text-lg font-bold text-theme-dark line-clamp-1">Catatan Dokumen</h3>
+                    <p class="text-xs text-gray-400">Masukan Staf / Laporan Perbaikan File</p>
+                </div>
+            </div>
+
+            <div id="comments-list" class="flex-1 overflow-y-auto space-y-3 pr-1 my-2 min-h-[160px] max-h-[280px]">
+                <!-- Dynamic Comments -->
+            </div>
+
+            <form onsubmit="handleSendComment(event)" class="mt-3 pt-3 border-t space-y-3">
+                <input type="hidden" id="comment-target-id">
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-[11px] font-bold text-gray-600 mb-1">Nama Staf / PIC</label>
+                        <input type="text" id="comment-sender-name" required placeholder="Bidan Aminah"
+                               class="w-full bg-gray-50 border border-gray-200 px-3 py-2 rounded-xl text-xs focus:outline-none focus:border-theme-pink">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-gray-600 mb-1">Unit / Poli</label>
+                        <input type="text" id="comment-sender-unit" required placeholder="Poli KIA"
+                               class="w-full bg-gray-50 border border-gray-200 px-3 py-2 rounded-xl text-xs focus:outline-none focus:border-theme-pink">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-gray-600 mb-1">Pesan Catatan / Revisi</label>
+                    <textarea id="comment-message" required rows="2" placeholder="Tuliskan pesan di sini..."
+                              class="w-full bg-gray-50 border border-gray-200 px-3 py-2 rounded-xl text-xs focus:outline-none focus:border-theme-pink resize-none"></textarea>
+                </div>
+                <button type="submit" id="btn-send-comment" class="w-full bg-theme-pink hover:bg-theme-pinkhover text-white font-bold py-2.5 rounded-2xl shadow-playful text-xs transition-all flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-paper-plane"></i>
+                    <span>KIRIM MASUKAN KE ADMIN</span>
+                </button>
+            </form>
         </div>
     </div>
 
-    <main class="w-full max-w-md bg-white rounded-4xl sm:rounded-5xl p-6 sm:p-10 shadow-playful border border-white/80 relative z-10">
-        
-        <div class="text-center mb-6">
-            <a href="index.html" class="inline-flex items-center justify-center w-16 h-16 bg-theme-purple rounded-3xl text-white shadow-playful mb-3 hover:rotate-6 transition-transform text-3xl">
-                <i class="fa-solid fa-cloud-bolt text-theme-yellow"></i>
-            </a>
-            <h1 class="font-display text-2xl sm:text-3xl font-bold text-theme-dark">
-                SIKDA<span class="text-theme-pink">.Admin</span>
-            </h1>
-            <p class="text-xs font-medium text-gray-400 mt-1">Sistem Kelola Dokumen Admin Tata Usaha</p>
-        </div>
-
-        <div class="mb-5 p-3 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-between">
-            <span class="text-[11px] font-bold text-gray-500 flex items-center gap-1.5">
-                <i class="fa-solid fa-wand-magic-sparkles text-theme-yellow"></i> Kredensial Demo:
-            </span>
-            <button type="button" onclick="quickFillAdmin()" class="px-3 py-1.5 bg-white hover:bg-purple-50 text-theme-purple rounded-lg text-[10px] font-bold border border-gray-200 transition-colors">
-                ⚡ Isi Login Admin
-            </button>
-        </div>
-
-        <form onsubmit="handleLoginSubmit(event)" class="space-y-4">
-            <div>
-                <label for="username" class="block text-xs font-bold text-gray-700 mb-1.5">Username Admin</label>
-                <div class="relative">
-                    <i class="fa-solid fa-user-shield text-gray-400 absolute left-4 top-1/2 -translate-y-1/2"></i>
-                    <input type="text" id="username" required autocomplete="username"
-                           class="w-full bg-gray-50 border border-gray-200 text-sm pl-11 pr-4 py-3.5 rounded-2xl focus:outline-none focus:border-theme-purple focus:bg-white transition-all font-medium"
-                           placeholder="Username admin...">
-                </div>
+    <footer class="bg-theme-dark text-white pt-12 pb-8 px-6 md:px-12 border-t-4 border-theme-yellow">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center text-xs text-gray-400 gap-4">
+            <div class="flex items-center gap-2">
+                <span class="font-display font-bold text-white text-base">SIKDA<span class="text-theme-pink">.Link</span></span>
+                <span>• Portal Publik Puskesmas Sehat Sejahtera</span>
             </div>
-
-            <div>
-                <label for="password" class="block text-xs font-bold text-gray-700 mb-1.5">Password</label>
-                <div class="relative">
-                    <i class="fa-solid fa-lock text-gray-400 absolute left-4 top-1/2 -translate-y-1/2"></i>
-                    <input type="password" id="password" required autocomplete="current-password"
-                           class="w-full bg-gray-50 border border-gray-200 text-sm pl-11 pr-12 py-3.5 rounded-2xl focus:outline-none focus:border-theme-purple focus:bg-white transition-all font-medium"
-                           placeholder="••••••••">
-                    <button type="button" onclick="togglePasswordVisibility()" class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none">
-                        <i class="fa-solid fa-eye" id="eye-icon"></i>
-                    </button>
-                </div>
-            </div>
-
-            <button type="submit" id="btn-submit" class="w-full bg-theme-yellow hover:bg-theme-yellowhover text-theme-dark font-display font-bold py-4 px-4 rounded-full text-sm shadow-yellow-glow transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 mt-2">
-                <span>MASUK DASHBOARD</span>
-                <i class="fa-solid fa-arrow-right"></i>
-            </button>
-        </form>
-
-        <div class="mt-6 text-center border-t border-gray-100 pt-4">
-            <a href="index.html" class="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-theme-pink transition-colors">
-                <i class="fa-solid fa-chevron-left"></i>
-                <span>Kembali ke Portal Publik</span>
-            </a>
+            <p>© 2026 SIKDA-Link System.</p>
         </div>
-
-    </main>
-
-    <footer class="mt-6 text-center text-xs text-gray-400 font-medium z-10">
-        © 2026 SIKDA-Link • Admin Panel Tata Usaha
     </footer>
 
     <script>
+        // Data Global State
+        let categories = [];
+        let linkData = [];
+        let commentsData = [];
+
+        // Fallback Default jika belum terkoneksi ke Apps Script API
+        const defaultCategories = [
+            { id: "CAT01", nama: "Akreditasi", badgeColor: "bg-pink-100 text-theme-pink", icon: "award" },
+            { id: "CAT02", nama: "Keuangan", badgeColor: "bg-yellow-100 text-yellow-800", icon: "file-invoice-dollar" },
+            { id: "CAT03", nama: "Poli & UKP", badgeColor: "bg-cyan-100 text-cyan-800", icon: "stethoscope" },
+            { id: "CAT04", nama: "Tata Usaha", badgeColor: "bg-purple-100 text-purple-800", icon: "envelope" }
+        ];
+
         document.addEventListener("DOMContentLoaded", () => {
-            quickFillAdmin();
+            updateAuthStatus();
+            loadInitialData();
         });
 
-        function showToast(title, msg, isError = false) {
+        function showToast(msg) {
             const toast = document.getElementById("toast");
-            document.getElementById("toast-title").innerText = title;
-            document.getElementById("toast-msg").innerText = msg;
-            
-            const icon = document.getElementById("toast-icon");
-            icon.className = isError ? "fa-solid fa-triangle-exclamation text-red-500 text-xl" : "fa-solid fa-shield-halved text-theme-pink text-xl";
-
+            document.getElementById("toast-message").innerText = msg;
             toast.classList.remove("translate-x-full");
             setTimeout(() => { toast.classList.add("translate-x-full"); }, 3000);
         }
 
-        function quickFillAdmin() {
-            document.getElementById("username").value = "admin";
-            document.getElementById("password").value = "admin123";
-        }
-
-        function togglePasswordVisibility() {
-            const passInput = document.getElementById("password");
-            const eyeIcon = document.getElementById("eye-icon");
-            if (passInput.type === "password") {
-                passInput.type = "text";
-                eyeIcon.classList.replace("fa-eye", "fa-eye-slash");
-            } else {
-                passInput.type = "password";
-                eyeIcon.classList.replace("fa-eye-slash", "fa-eye");
+        function updateAuthStatus() {
+            const logged = localStorage.getItem("sikda_admin_logged");
+            const btnText = document.getElementById("nav-login-text");
+            if (logged === "true") {
+                btnText.innerText = "DASHBOARD ADMIN";
+                document.getElementById("nav-login-btn").href = "dashboard.html";
             }
         }
 
-        async function handleLoginSubmit(e) {
-            e.preventDefault();
-            const u = document.getElementById("username").value.trim();
-            const p = document.getElementById("password").value.trim();
-            const btn = document.getElementById("btn-submit");
-            
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>MEMVERIFIKASI...</span>`;
-            btn.disabled = true;
-
+        // ==========================================
+        // FUNGSI KOMUNIKASI API (BACKEND GOOGLE SHEETS)
+        // ==========================================
+        async function fetchGAS(action, data = {}) {
             const gasUrl = localStorage.getItem("sikda_gas_url");
             const sheetId = localStorage.getItem("sikda_sheet_id");
 
-            // Attempt to login via GAS
-            if (gasUrl && sheetId) {
-                try {
-                    const response = await fetch(gasUrl, {
-                        method: "POST",
-                        headers: { "Content-Type": "text/plain;charset=utf-8" },
-                        body: JSON.stringify({ action: "login", data: { username: u, password: p }, spreadsheetId: sheetId })
-                    });
-                    const res = await response.json();
-
-                    if (res.success) {
-                        if (res.user.role !== 'ADMIN') {
-                            showToast("Ditolak", "Panel ini khusus untuk Administrator TU.", true);
-                            resetBtn();
-                            return;
-                        }
-                        localStorage.setItem("sikda_admin_logged", "true");
-                        localStorage.setItem("sikda_user", JSON.stringify(res.user));
-                        showToast("Berhasil", "Mengarahkan ke dashboard admin...");
-                        setTimeout(() => window.location.href = "dashboard.html", 800);
-                        return;
-                    } else {
-                        showToast("Gagal", res.message || "Kredensial tidak valid", true);
-                        resetBtn();
-                        return;
-                    }
-                } catch(err) {
-                    console.warn("GAS Error, falling back to local auth", err);
-                }
+            if (!gasUrl || !sheetId) {
+                throw new Error("API Apps Script belum dikonfigurasi. Mode Fallback Lokal.");
             }
 
-            // Fallback Local Mock Auth
-            setTimeout(() => {
-                if (u === "admin" && p === "admin123") {
-                    localStorage.setItem("sikda_admin_logged", "true");
-                    showToast("Login Local", "Mengarahkan ke dashboard admin...");
-                    setTimeout(() => window.location.href = "dashboard.html", 800);
-                } else {
-                    showToast("Login Gagal", "Username atau password admin salah!", true);
-                    resetBtn();
-                }
-            }, 600);
+            const response = await fetch(gasUrl, {
+                method: "POST",
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify({ action, data, spreadsheetId: sheetId })
+            });
 
-            function resetBtn() {
-                btn.innerHTML = `<span>MASUK DASHBOARD</span> <i class="fa-solid fa-arrow-right"></i>`;
+            const result = await response.json();
+            if (!result.success) throw new Error(result.message);
+            return result;
+        }
+
+        async function loadInitialData() {
+            document.getElementById("loading-screen").classList.remove("hidden");
+            try {
+                // Tarik data dari Google Sheets
+                const res = await fetchGAS("getAllData");
+                categories = res.data.categories.length > 0 ? res.data.categories : defaultCategories;
+                linkData = res.data.links || [];
+                commentsData = res.data.comments || [];
+            } catch (err) {
+                console.warn("Menggunakan Data Lokal Mock", err);
+                categories = JSON.parse(localStorage.getItem("sikda_categories")) || defaultCategories;
+                linkData = JSON.parse(localStorage.getItem("sikda_links")) || [];
+                commentsData = JSON.parse(localStorage.getItem("sikda_comments")) || [];
+            } finally {
+                document.getElementById("loading-screen").classList.add("hidden");
+                renderAllUI();
+            }
+        }
+
+        function renderAllUI() {
+            renderCategories();
+            renderCategoryDropdown();
+            renderLinks();
+        }
+
+        function renderCategories() {
+            const grid = document.getElementById("categories-grid");
+            grid.innerHTML = categories.map(cat => `
+                <div onclick="setFilterCategory('${cat.nama}')" class="bg-white p-6 rounded-4xl border-2 border-gray-100 shadow-sm hover:shadow-card-hover hover:border-theme-pink transition-all duration-300 cursor-pointer group text-center flex flex-col items-center">
+                    <div class="w-16 h-16 ${cat.badgeColor || 'bg-pink-100 text-theme-pink'} rounded-3xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-2xl">
+                        <i class="fa-solid fa-${cat.icon || 'folder'}"></i>
+                    </div>
+                    <h3 class="font-display text-lg font-bold text-theme-dark mb-1">${cat.nama}</h3>
+                    <span class="text-xs font-bold text-theme-pink bg-theme-pink/10 px-3 py-1 rounded-full group-hover:bg-theme-pink group-hover:text-white transition-colors">Lihat Folder →</span>
+                </div>
+            `).join('');
+        }
+
+        function renderCategoryDropdown() {
+            const dropdown = document.getElementById("category-filter");
+            dropdown.innerHTML = `<option value="ALL">Semua Kategori Dokumen</option>` +
+                categories.map(c => `<option value="${c.nama}">${c.nama}</option>`).join('');
+        }
+
+        function renderLinks() {
+            const query = document.getElementById("directory-search").value.toLowerCase();
+            const catVal = document.getElementById("category-filter").value;
+            const container = document.getElementById("link-cards-container");
+            const emptyState = document.getElementById("empty-state");
+
+            const filtered = linkData.filter(item => {
+                if (item.visibilitas === 'ADMIN') return false; 
+                if (catVal !== 'ALL' && item.kategori !== catVal) return false;
+                if (query && !item.judul.toLowerCase().includes(query) && !item.pic.toLowerCase().includes(query)) return false;
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = "";
+                emptyState.classList.remove("hidden");
+                return;
+            }
+
+            emptyState.classList.add("hidden");
+
+            container.innerHTML = filtered.map(item => {
+                const countComments = commentsData.filter(c => c.linkId === item.id).length;
+                const catObj = categories.find(c => c.nama === item.kategori);
+                const badgeColor = catObj ? (catObj.badgeColor || 'bg-gray-100 text-gray-700') : 'bg-gray-100 text-gray-700';
+                
+                // Menghindari error petik pada inline onclick string
+                const safeTitle = item.judul.replace(/'/g, "\\'").replace(/"/g, '\\"');
+
+                return `
+                    <div class="bg-white p-6 rounded-4xl border-2 border-gray-100 shadow-sm hover:shadow-card-hover transition-all duration-300 flex flex-col justify-between group">
+                        <div>
+                            <div class="flex justify-between items-center mb-4">
+                                <span class="text-xs font-bold px-3 py-1 rounded-full ${badgeColor}">
+                                    ${item.kategori}
+                                </span>
+                            </div>
+
+                            <h3 class="font-display text-lg font-bold text-theme-dark mb-2 group-hover:text-theme-pink transition-colors">
+                                ${item.judul}
+                            </h3>
+
+                            <p class="text-xs text-gray-500 mb-6 flex items-center gap-1.5"><i class="fa-solid fa-user text-gray-400"></i> PIC: <strong class="text-gray-700">${item.pic}</strong></p>
+                        </div>
+
+                        <div class="pt-4 border-t border-gray-100 flex flex-wrap items-center justify-between gap-2">
+                            <a href="${item.url}" target="_blank" onclick="logOpenLink('${safeTitle}')" class="bg-theme-yellow hover:bg-theme-yellowhover text-theme-dark font-display font-bold px-4 py-2.5 rounded-full text-xs flex items-center gap-1.5 shadow-sm transition-all">
+                                <span>BUKA CLOUD</span> <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                            </a>
+
+                            <button onclick="openCommentModal('${item.id}', '${safeTitle}')" class="bg-gray-100 hover:bg-theme-pink hover:text-white text-gray-600 font-bold px-3 py-2.5 rounded-full text-xs flex items-center gap-1.5 transition-colors">
+                                <i class="fa-solid fa-comment-dots"></i>
+                                <span>Catatan (${countComments})</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function setFilterCategory(cat) {
+            document.getElementById("category-filter").value = cat;
+            renderLinks();
+            document.getElementById("directory").scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function scrollToDirectoryWithSearch() {
+            const heroQuery = document.getElementById("hero-search-input").value;
+            document.getElementById("directory-search").value = heroQuery;
+            renderLinks();
+            document.getElementById("directory").scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function openCommentModal(linkId, linkJudul) {
+            document.getElementById("comment-target-id").value = linkId;
+            document.getElementById("comment-target-title").innerText = linkJudul;
+            renderModalComments(linkId);
+            document.getElementById("comment-modal").classList.remove("hidden");
+        }
+
+        function closeCommentModal() {
+            document.getElementById("comment-modal").classList.add("hidden");
+        }
+
+        function renderModalComments(linkId) {
+            const container = document.getElementById("comments-list");
+            const filtered = commentsData.filter(c => c.linkId === linkId);
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-gray-400 text-xs flex flex-col items-center">
+                        <i class="fa-solid fa-comment-slash text-3xl opacity-40 mb-2"></i>
+                        <p>Belum ada masukan untuk folder ini.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filtered.map(c => `
+                <div class="bg-gray-50 p-3 rounded-2xl border border-gray-100 text-xs space-y-1">
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-theme-dark">${c.sender} (${c.unit})</span>
+                        <span class="text-[10px] text-gray-400">${c.timestamp}</span>
+                    </div>
+                    <p class="text-gray-600">${c.message}</p>
+                </div>
+            `).join('');
+        }
+
+        async function handleSendComment(e) {
+            e.preventDefault();
+            const btn = document.getElementById("btn-send-comment");
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>MENGIRIM...</span>`;
+            btn.disabled = true;
+
+            const newComment = {
+                id: "C" + Date.now(),
+                linkId: document.getElementById("comment-target-id").value,
+                sender: document.getElementById("comment-sender-name").value,
+                unit: document.getElementById("comment-sender-unit").value,
+                message: document.getElementById("comment-message").value,
+                timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16)
+            };
+
+            try {
+                // Simpan permanen ke Backend Google Sheets
+                await fetchGAS("addComment", newComment);
+                await loadInitialData(); // Segarkan data
+            } catch(err) {
+                // Fallback local save jika gagal
+                commentsData.unshift(newComment);
+                localStorage.setItem("sikda_comments", JSON.stringify(commentsData));
+                renderLinks();
+            } finally {
+                document.getElementById("comment-message").value = "";
+                renderModalComments(newComment.linkId);
+                showToast("Masukan berhasil dikirim ke Admin TU!");
+                btn.innerHTML = originalText;
                 btn.disabled = false;
             }
+        }
+
+        function logOpenLink(judul) {
+            const safeJudul = judul || "Dokumen Tidak Dikenal";
+            const newLog = {
+                id: "LOG" + Date.now(),
+                timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16),
+                user: "Staf Publik",
+                action: "OPEN_LINK",
+                desc: `Membuka folder "${safeJudul}"`
+            };
+            
+            // Push ke API diam-diam
+            fetchGAS("logActivity", newLog).catch(e => {
+                let logs = JSON.parse(localStorage.getItem("sikda_logs")) || [];
+                logs.unshift(newLog);
+                localStorage.setItem("sikda_logs", JSON.stringify(logs));
+            });
         }
     </script>
 </body>
